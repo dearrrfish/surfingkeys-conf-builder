@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "abstract": {
+      "type": "boolean"
+    },
+    "extends": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base": {
+      "enum": [
+        "minimal",
+        "upstream-global"
+      ]
+    },
+    "selectAdd": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines)\\.[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "uniqueItems": true
+    },
+    "selectRemove": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines)\\.[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "uniqueItems": true
+    },
+    "settings": {
+      "type": "object"
+    },
+    "unsetSettings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "leaders": {
+      "type": "object",
+      "properties": {
+        "site": {
+          "type": "string"
+        },
+        "search": {
+          "type": "string"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "overrides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines)\\.[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "with": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines)\\.[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
+          }
+        },
+        "required": [
+          "target",
+          "with"
+        ],
+        "additionalProperties": false
+      },
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id"
+  ],
+  "additionalProperties": false
+}

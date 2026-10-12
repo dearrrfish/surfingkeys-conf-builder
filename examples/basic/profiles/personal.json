@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "personal",
+  "extends": "./common.json",
+  "selectAdd": [
+    "upstream/actions.amazon",
+    "example_notes/actions.notes"
+  ]
+}

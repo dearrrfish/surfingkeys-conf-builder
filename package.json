@@ -1,0 +1,50 @@
+{
+  "name": "surfingkeys-conf-builder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "skcb": "dist-tool/cli.js"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"require('node:fs').chmodSync('dist-tool/cli.js',0o755)\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests",
+    "test": "node --test tests/*.test.ts",
+    "test:profiles": "npm run build && node --test tests/profiles.test.ts",
+    "test:cli": "npm run build && node --test tests/cli.test.ts",
+    "test:extensions": "npm run build && node --test tests/extensions.test.ts",
+    "test:publication": "npm run build && node --test tests/publication.test.ts",
+    "pretest": "npm run build",
+    "test:adapter": "npm run build && node --test tests/adapter.test.ts",
+    "test:upstream-integrity": "npm run build && node --test tests/upstream-integrity.test.ts",
+    "test:build": "npm run build && node --test tests/build.test.ts",
+    "test:runtime": "npm run build && node --test tests/build.test.ts",
+    "test:registration": "npm run build && node --test tests/build.test.ts",
+    "test:reproducibility": "npm run build && node --test tests/w3-probes.test.ts",
+    "test:generator": "npm run build && node --test tests/build.test.ts tests/w3-probes.test.ts",
+    "test:browser": "npm run build && node -e \"if(!process.env.SKCB_BROWSER_EXTENSION){console.error('Set SKCB_BROWSER_EXTENSION to an official unpacked SurfingKeys extension directory');process.exit(2)}\" && node --test tests/browser.test.ts"
+  },
+  "dependencies": {
+    "@babel/generator": "7.28.5",
+    "@babel/parser": "7.28.5",
+    "@babel/traverse": "7.28.5",
+    "@babel/types": "7.28.5",
+    "ajv": "8.17.1",
+    "dompurify": "3.4.16",
+    "uhtml": "3.2.2",
+    "webpack": "5.111.1"
+  },
+  "devDependencies": {
+    "@types/babel__generator": "7.27.0",
+    "@types/babel__traverse": "7.28.0",
+    "@types/node": "24.0.0",
+    "eslint": "9.39.1",
+    "jsdom": "30.1.2",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.46.4"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

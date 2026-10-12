@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "upstream": {
+    "path": "../../upstream",
+    "adapter": "b0o-v1"
+  },
+  "extensions": [
+    "./custom/notes"
+  ],
+  "profilesDir": "./profiles",
+  "outDir": "./dist"
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "profileId",
+    "buildId",
+    "artifacts",
+    "reportHash",
+    "outputHash",
+    "noticesHash"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "profileId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "buildId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "reportHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "artifacts": {
+      "type": "object",
+      "required": [
+        "script",
+        "report",
+        "notices"
+      ],
+      "properties": {
+        "script": {
+          "type": "string",
+          "pattern": "^builds/[a-f0-9]{64}/[^/]+$"
+        },
+        "report": {
+          "type": "string",
+          "pattern": "^builds/[a-f0-9]{64}/[^/]+$"
+        },
+        "notices": {
+          "type": "string",
+          "pattern": "^builds/[a-f0-9]{64}/[^/]+$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "noticesHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "additionalProperties": false
+}

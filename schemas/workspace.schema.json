@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "upstream": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adapter": {
+          "const": "b0o-v1"
+        }
+      },
+      "required": [
+        "path",
+        "adapter"
+      ],
+      "additionalProperties": false
+    },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "profilesDir": {
+      "type": "string",
+      "minLength": 1
+    },
+    "outDir": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "upstream",
+    "extensions",
+    "profilesDir",
+    "outDir"
+  ],
+  "additionalProperties": false
+}

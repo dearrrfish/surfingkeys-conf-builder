@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "namespace": "example_notes",
+  "entries": {
+    "actions.notes": {
+      "entry": "./notes.js",
+      "capabilities": [
+        "core.openLink"
+      ],
+      "contributions": [
+        {
+          "id": "home",
+          "kind": "mapkey",
+          "domain": "notes.example.com",
+          "alias": "h",
+          "description": "Open notes home",
+          "callbackRequired": true
+        }
+      ]
+    },
+    "search-engines.notes": {
+      "entry": "./search.js",
+      "contributions": [
+        {
+          "id": "search",
+          "kind": "search",
+          "alias": "nt",
+          "name": "Notes example",
+          "search": "https://notes.example.com/search?q="
+        }
+      ]
+    }
+  }
+}

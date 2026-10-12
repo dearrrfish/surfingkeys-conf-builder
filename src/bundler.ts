@@ -1,0 +1,18 @@
+import webpack from 'webpack';
+import {readFile,realpath} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {createRequire} from 'node:module';
+import path from 'node:path';
+import {fail} from './input.js';
+const require=createRequire(import.meta.url);
+export interface Bundled {packages:{name:string;version:string;license:string}[];notices:string}
+export async function bundle(entry:string,output:string,mode:'production'|'development',upstreamLicense:string):Promise<Bundled>{
+ const compiler=webpack({mode,target:'web',context:path.dirname(entry),entry,cache:false,devtool:false,output:{path:output,filename:'surfingkeys.js',iife:true,pathinfo:false},optimization:{minimize:false,splitChunks:false,runtimeChunk:false,moduleIds:false,chunkIds:'deterministic',concatenateModules:false},resolve:{modules:[path.resolve(path.dirname(require.resolve('webpack/package.json')),'..')]},module:{rules:[{test:/\.json$/,type:'asset/source'},{test:/\.css$/,type:'asset/source'}]},plugins:[{apply(compiler){compiler.hooks.compilation.tap('LogicalModuleIds',compilation=>{compilation.hooks.moduleIds.tap('LogicalModuleIds',modules=>{for(const mod of modules){const resource=(mod as webpack.NormalModule).resource;if(!resource){continue;}const marker=`${path.sep}node_modules${path.sep}`;const index=resource.indexOf(marker);const logical=index>=0?`npm/${resource.slice(index+marker.length)}`:`generated/${path.relative(path.dirname(entry),resource)}`;if(index<0&&(path.relative(path.dirname(entry),resource).startsWith(`..${path.sep}`)||path.isAbsolute(path.relative(path.dirname(entry),resource)))){fail('BUNDLE_RESOLUTION_ESCAPE','Bundler resolved outside generated graph',4);}compilation.chunkGraph.setModuleId(mod,createHash('sha256').update(logical.split(path.sep).join('/')).digest('hex').slice(0,32));}});});}},new webpack.BannerPlugin({banner:'SurfingKeys selective configuration. Source and licenses: report.json and THIRD_PARTY_NOTICES.txt',raw:false})],performance:{hints:false}});
+ let stats:webpack.Stats|undefined;
+ try{stats=await new Promise((resolve,reject)=>compiler.run((error,s)=>error?reject(error):resolve(s)));if(!stats||stats.hasErrors()){fail('BUNDLE_FAILED',stats?.toString({all:false,errors:true})??'Webpack returned no stats',4);}if(stats.compilation.getAssets().map(a=>a.name).join(',')!=='surfingkeys.js'){fail('BUNDLE_OUTPUT_INVALID','Expected one JavaScript asset',4);}}
+ finally{await new Promise<void>((resolve,reject)=>compiler.close(error=>error?reject(error):resolve()));}
+ const roots=new Set<string>();function inspect(mod:webpack.Module):void{const resource=(mod as webpack.NormalModule).resource;if(resource&&resource.includes(`${path.sep}node_modules${path.sep}`)){const match=resource.match(/^(.*\/node_modules\/(?:@[^/]+\/)?[^/]+)\//);if(match){roots.add(match[1]);}}const nested=(mod as any).modules as Iterable<webpack.Module>|undefined;if(nested){for(const child of nested){inspect(child);}}}for(const mod of stats.compilation.modules){inspect(mod);}
+ const packages=[];let notices=`SurfingKeys upstream\n${upstreamLicense}\n`;
+ for(const root of [...roots].sort()){const info=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));packages.push({name:info.name,version:info.version,license:info.license??'UNKNOWN'});let text:string|undefined;for(const name of ['LICENSE','LICENSE.txt','LICENSE.md','license','license.txt','COPYING']){try{text=await readFile(path.join(await realpath(root),name),'utf8');break;}catch{/* Try conventional license filenames. */}}if(text===undefined){fail('LICENSE_MISSING',`No license text for bundled package ${info.name}`,4);}notices+=`\n${info.name}@${info.version}\n${text}\n`;}
+ packages.sort((a,b)=>a.name.localeCompare(b.name));return {packages,notices};
+}

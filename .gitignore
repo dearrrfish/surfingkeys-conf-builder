@@ -13,3 +13,9 @@
 /.agent-team/templates/prompts/coordinate.md
 /.agent-team/templates/prompts/review.md
 /.agent-team/templates/prompts/discovery.md
+
+.agent-team/rendered/
+node_modules/
+.cache/
+dist-tool/
+.generated/

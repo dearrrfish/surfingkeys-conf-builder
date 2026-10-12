@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "work",
+  "extends": "./common.json",
+  "selectAdd": [
+    "example_notes/search-engines.notes"
+  ],
+  "settings": {
+    "defaultSearchEngine": "nt"
+  }
+}
