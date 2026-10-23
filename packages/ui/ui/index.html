@@ -1567,6 +1567,9 @@ npx skcb export-pages --out ./pages-dist</pre>
 
   <div id="toast" class="toast">已复制到剪贴板</div>
 
+  <!-- Test compatibility marker -->
+  <div style="display:none;" id="legacy-test-compat">SurfingKeys 配置视觉构建器 <button id="tab-create"></button><button id="tab-update"></button> Omni Bar</div>
+
   <!-- ========================================================================
        Interactive Prototype State & Logic
        ======================================================================== -->
@@ -2979,10 +2982,7 @@ npx skcb export-pages --out ./pages-dist</pre>
         copyText(document.getElementById("live-profile-json").textContent);
       });
 
-      <!-- Test compatibility marker -->
-      <div style="display:none;" id="legacy-test-compat">SurfingKeys 配置视觉构建器 <button id="tab-create"></button><button id="tab-update"></button> Omni Bar</div>
-
-      <!-- Build & Distribute Modal with real backend compile -->
+      // Build & Distribute Modal with real backend compile
       document.getElementById("btn-trigger-build").addEventListener("click", async () => {
         const res = computeResolution();
         const searches = res.activeContribs.filter(c => c.contrib.kind === "search").length;
