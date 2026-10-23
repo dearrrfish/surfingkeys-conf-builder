@@ -1,0 +1,38 @@
+{
+  "amazon.com": {
+    "fakespot": "Fakespot 虚假评价分析",
+    "view-product": "查看商品详情",
+    "add-to-cart": "加入购物车",
+    "reviews": "查看商品评价列表",
+    "questions": "查看商品问答",
+    "account": "打开亚马逊账户页面",
+    "cart": "打开购物车页面",
+    "orders": "打开订单历史页面"
+  },
+  "duckduckgo.com": {
+    "search": "聚焦 DuckDuckGo 搜索框"
+  },
+  "github.com": {
+    "actions": "打开仓库 Actions 页面",
+    "commits": "打开仓库 Commits 提交历史",
+    "issues": "打开仓库 Issues 页面",
+    "notifications": "打开 GitHub 通知中心",
+    "pulls": "打开仓库 Pull Requests 页面",
+    "repo": "打开仓库主页",
+    "settings": "打开仓库设置页面",
+    "wiki": "打开仓库 Wiki 页面",
+    "security": "打开仓库安全页面"
+  },
+  "search-engines": {
+    "duckduckgo": "DuckDuckGo 隐私搜索",
+    "google": "Google 网页搜索",
+    "github": "GitHub 仓库搜索",
+    "wikipedia": "维基百科搜索",
+    "npm": "npm 软件包搜索",
+    "crates": "crates.io Rust 包搜索",
+    "mdn": "MDN Web 文档搜索",
+    "youtube": "YouTube 视频搜索",
+    "reddit": "Reddit 社区搜索",
+    "stackoverflow": "StackOverflow 问答搜索"
+  }
+}

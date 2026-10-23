@@ -95,6 +95,22 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/lib-b0o:
+    dependencies:
+      dompurify:
+        specifier: 3.4.16
+        version: 3.4.16
+      uhtml:
+        specifier: 3.2.2
+        version: 3.2.2
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.0
+        version: 24.0.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/ui:
     dependencies:
       '@skcb/core':

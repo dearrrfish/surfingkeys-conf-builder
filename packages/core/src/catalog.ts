@@ -112,6 +112,20 @@ export async function loadMetadataCatalog(ctx: Context): Promise<Catalog> {
         id: `${manifest.namespace}/${local}`,
         source: path.relative(ctx.root, root).split(path.sep).join('/')
       });
+      if (manifest.namespace === 'b0o') {
+        const upstreamAlias = `upstream/${local}`;
+        const existingIdx = entries.findIndex(e => e.id === upstreamAlias);
+        const aliasedEntry = {
+          ...entry,
+          id: upstreamAlias,
+          source: path.relative(ctx.root, root).split(path.sep).join('/')
+        };
+        if (existingIdx >= 0) {
+          entries[existingIdx] = aliasedEntry;
+        } else {
+          entries.push(aliasedEntry);
+        }
+      }
     }
   }
 

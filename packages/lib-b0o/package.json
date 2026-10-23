@@ -1,0 +1,37 @@
+{
+  "name": "@skcb/lib-b0o",
+  "version": "0.2.0",
+  "description": "Pre-adapted atomic modules, actions and search engines from b0o/surfingkeys-conf",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./selective.json": "./dist/selective.json",
+    "./*": "./dist/*"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && node dist-adapter/adapter.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dompurify": "3.4.16",
+    "uhtml": "3.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.0",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

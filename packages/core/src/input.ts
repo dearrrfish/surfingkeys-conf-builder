@@ -154,27 +154,25 @@ export async function workspace(file: string): Promise<Context> {
   if (value.schemaVersion === 1) {
     upstream = await sourceRoot(value.upstream.path);
     extensions = await Promise.all(value.extensions.map(sourceRoot));
+    if (new Set([upstream, ...extensions]).size !== extensions.length + 1) {
+      fail('SOURCE_DUPLICATE', 'Source roots must be unique');
+    }
   } else {
-    const resolvedLibs = await Promise.all(value.libraries.map(sourceRoot));
-    const b0oIdx = resolvedLibs.findIndex(lib => lib.endsWith('lib-b0o') || lib.includes('b0o') || lib.endsWith('upstream'));
-    if (b0oIdx >= 0) {
-      upstream = resolvedLibs[b0oIdx];
-      extensions = resolvedLibs.filter((_, i) => i !== b0oIdx);
-    } else {
-      upstream = '';
-      extensions = resolvedLibs;
+    extensions = await Promise.all(value.libraries.map(sourceRoot));
+    const b0oIdx = extensions.findIndex(lib => lib.endsWith('lib-b0o') || lib.includes('b0o') || lib.endsWith('upstream'));
+    upstream = b0oIdx >= 0 ? extensions[b0oIdx] : '';
+    if (new Set(extensions).size !== extensions.length) {
+      fail('SOURCE_DUPLICATE', 'Source roots must be unique');
     }
   }
 
   const profilesDir = await inside(root, value.profilesDir);
   const outDir = await inside(root, value.outDir, false);
 
-  const allDirs = upstream ? [upstream, profilesDir, ...extensions] : [profilesDir, ...extensions];
+  const allDirs = [profilesDir, ...extensions];
+  if (upstream && !extensions.includes(upstream)) allDirs.push(upstream);
   for (const dir of allDirs) {
     if (!(await stat(dir)).isDirectory()) { fail('PATH_INVALID', 'Declared directory must be a directory'); }
-  }
-  if (upstream && new Set([upstream, ...extensions]).size !== extensions.length + 1) {
-    fail('SOURCE_DUPLICATE', 'Source roots must be unique');
   }
 
   return { workspace: value, file: resolved, root, upstream, extensions, profilesDir, outDir };

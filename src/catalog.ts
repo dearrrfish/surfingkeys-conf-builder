@@ -23,6 +23,12 @@ export async function loadMetadataCatalog(ctx:Context):Promise<Catalog> {
       const entryFile=await sourceInput(root,entry.entry);if(!(await stat(entryFile)).isFile()) {fail('ENTRY_INVALID','Extension entry must be a regular file');}
       const ids=new Set<string>();for (const contribution of entry.contributions) {if (ids.has(contribution.id)) {fail('CONTRIBUTION_DUPLICATE',`Duplicate contribution ${contribution.id}`);} ids.add(contribution.id);}
       entries.push({...entry,id:`${manifest.namespace}/${local}`,source:path.relative(ctx.root,root).split(path.sep).join('/')});
+      if (manifest.namespace === 'b0o') {
+        const upstreamAlias = `upstream/${local}`;
+        if (!entries.some(e => e.id === upstreamAlias)) {
+          entries.push({...entry,id:upstreamAlias,source:path.relative(ctx.root,root).split(path.sep).join('/')});
+        }
+      }
     }
   }
   const index=new Map(entries.map(entry=>[entry.id,entry]));
