@@ -160,11 +160,21 @@ if [[ "$DRY_RUN" == "true" ]]; then
   exit 0
 fi
 
-# Determine source templates directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-REPO_ROOT="$(dirname "$SCRIPT_DIR")"
-TEMPLATE_PROJ="$REPO_ROOT/templates/skcb-proj-repo"
-TEMPLATE_LIB="$REPO_ROOT/templates/skcb-lib-repo"
+# Determine source templates directory if running from a local clone
+SCRIPT_SOURCE="${BASH_SOURCE[0]:-}"
+if [[ -n "$SCRIPT_SOURCE" && -f "$SCRIPT_SOURCE" ]]; then
+  SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" &>/dev/null && pwd)"
+  REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+  TEMPLATE_PROJ="$REPO_ROOT/templates/skcb-proj-repo"
+  TEMPLATE_LIB="$REPO_ROOT/templates/skcb-lib-repo"
+  LOCAL_SKILLS="$REPO_ROOT/skills"
+else
+  SCRIPT_DIR=""
+  REPO_ROOT=""
+  TEMPLATE_PROJ=""
+  TEMPLATE_LIB=""
+  LOCAL_SKILLS=""
+fi
 
 if [[ -d "$TARGET_DIR" && "$(ls -A "$TARGET_DIR" 2>/dev/null)" ]]; then
   echo -e "\033[1;31m[ERROR]\033[0m Directory '$TARGET_DIR' already exists and is not empty." >&2
@@ -175,14 +185,14 @@ TMP_DIR="$(mktemp -d)"
 
 if [[ "$PROJECT_TYPE" == "lib" ]]; then
   echo -e "\n🚀 Generating module library template..."
-  if [[ -d "$TEMPLATE_LIB" ]]; then
+  if [[ -n "$TEMPLATE_LIB" && -d "$TEMPLATE_LIB" ]]; then
     cp -r "$TEMPLATE_LIB/." "$TMP_DIR/"
   else
     npx -y degit "$REPO_SLUG/templates/skcb-lib-repo" "$TMP_DIR"
   fi
 else
   echo -e "\n🚀 Generating configuration project workspace..."
-  if [[ -d "$TEMPLATE_PROJ" ]]; then
+  if [[ -n "$TEMPLATE_PROJ" && -d "$TEMPLATE_PROJ" ]]; then
     cp -r "$TEMPLATE_PROJ/." "$TMP_DIR/"
   else
     npx -y degit "$REPO_SLUG/templates/skcb-proj-repo" "$TMP_DIR"
@@ -217,8 +227,8 @@ EOF
   # Copy skills if requested
   if [[ "$INCLUDE_SKILLS" == "true" ]]; then
     mkdir -p "$TMP_DIR/skills"
-    if [[ -d "$REPO_ROOT/skills" ]]; then
-      cp -r "$REPO_ROOT/skills/." "$TMP_DIR/skills/"
+    if [[ -n "$LOCAL_SKILLS" && -d "$LOCAL_SKILLS" ]]; then
+      cp -r "$LOCAL_SKILLS/." "$TMP_DIR/skills/"
     else
       npx -y degit "$REPO_SLUG/skills" "$TMP_DIR/skills" || true
     fi
