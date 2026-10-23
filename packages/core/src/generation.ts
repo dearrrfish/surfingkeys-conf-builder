@@ -166,6 +166,30 @@ export async function generateGraph(
     files.push(logical);
   }
 
+  if (ctx.workspace.schemaVersion === 2) {
+    const apiCode = `const getApi = () => {
+  if (typeof window === 'undefined') return {};
+  if (typeof api !== 'undefined') return { v1: true, ...api };
+  return {
+    v1: false,
+    RUNTIME: typeof RUNTIME !== 'undefined' ? RUNTIME : undefined,
+    Clipboard: typeof Clipboard !== 'undefined' ? Clipboard : undefined,
+    Normal: typeof Normal !== 'undefined' ? Normal : undefined,
+    Hints: typeof Hints !== 'undefined' ? Hints : undefined,
+    Front: typeof Front !== 'undefined' ? Front : undefined,
+    mapkey: typeof mapkey !== 'undefined' ? mapkey : undefined,
+    map: typeof map !== 'undefined' ? map : undefined,
+    unmap: typeof unmap !== 'undefined' ? unmap : undefined,
+    addSearchAlias: typeof addSearchAlias !== 'undefined' ? addSearchAlias : undefined,
+    removeSearchAlias: typeof removeSearchAlias !== 'undefined' ? removeSearchAlias : undefined
+  };
+};
+export default getApi();\n`;
+    await mkdir(path.join(dir, 'core'), {recursive: true});
+    await writeFile(path.join(dir, 'core/api.js'), apiCode);
+    files.push('core/api.js');
+  }
+
   const factoryImports: string[] = [];
   const factories: string[] = [];
   for (const [index, id] of result.resolvedFeatures.entries()) {
@@ -185,7 +209,9 @@ export async function generateGraph(
   const hasSearch = graph.nodes.some(n => n.file === 'src/search-engines.js');
   const hasActions = graph.nodes.some(n => n.file === 'src/actions.js');
   const roots = [
-    "import api from './upstream/src/api.js';",
+    ctx.workspace.schemaVersion === 2
+      ? "import api from './core/api.js';"
+      : "import api from './upstream/src/api.js';",
     ...(hasAmazon ? ["import {callbacks as amazonCallbacks} from './upstream/src/keys.js';"] : []),
     ...(hasSearch ? ["import completions from './upstream/src/search-engines.js';"] : []),
     ...(hasActions ? ["import actions from './upstream/src/actions.js';"] : []),
@@ -219,7 +245,11 @@ export async function generateGraph(
     return `api.addSearchAlias(${JSON.stringify(c.alias)},${JSON.stringify(c.name)},${JSON.stringify(c.search)},"",${JSON.stringify(c.compl ?? '')},${callback},undefined,{favicon_url:${JSON.stringify(c.favicon ?? '')},skipMaps:true});\napi.mapkey(${JSON.stringify(r.keys[0])},${JSON.stringify(desc || c.name || '')},()=>api.Front.openOmnibar({type:'SearchEngine',extra:${JSON.stringify(c.alias)}}));\napi.mapkey(${JSON.stringify(r.keys[1])},${JSON.stringify(desc || c.name || '')},()=>api.Clipboard.read(c=>api.Front.openOmnibar({type:'SearchEngine',pref:c.data,extra:${JSON.stringify(c.alias)}})));`;
   });
 
-  const runtime = `${roots.join('\n')}\nconst allCallbacks=Object.create(null);\nconst factoryResults=[${factories.join(',')}].map(item=>{\n const services=Object.freeze(Object.fromEntries(item.capabilities.map(id=>{\n  if(id==='core.openLink')return ['openLink',${hasActions ? 'actions.openLink' : 'undefined'}];\n  if(id==='core.createHints')return ['createHints',(...args)=>api.Front.createHints(...args)];\n  if(id==='core.clickElement')return ['clickElement',(sel)=>()=>api.Front.clickElement(sel)];\n  if(id==='core.clipboard')return ['clipboard',{read:(cb)=>api.Clipboard.read(cb),write:(t)=>api.Clipboard.write(t)}];\n  if(id==='core.omnibar')return ['omnibar',(opts)=>api.Front.openOmnibar(opts)];\n  if(id==='core.secretStorage')return ['secretStorage',{get:(k)=>k?undefined:{},set:async()=>{}}];\n  throw new Error('Unknown capability: '+id);\n })));\n return {item,returned:item.factory(services)};\n});\nfor(const {item,returned} of factoryResults){\n if(!returned||typeof returned!=='object')throw new Error('Invalid factory result');\n if(Object.getPrototypeOf(returned)!==Object.prototype&&Object.getPrototypeOf(returned)!==null)throw new Error('Invalid factory result prototype');\n const own=Object.getOwnPropertyDescriptors(returned);\n if(!own.callbacks||!('value' in own.callbacks)||!own.callbacks.value||typeof own.callbacks.value!=='object')throw new Error('Invalid callbacks');\n if(Object.getPrototypeOf(own.callbacks.value)!==Object.prototype&&Object.getPrototypeOf(own.callbacks.value)!==null)throw new Error('Invalid callbacks prototype');\n const descriptors=Object.getOwnPropertyDescriptors(own.callbacks.value);\n if(item.required.some(id=>!Object.hasOwn(descriptors,id))||Reflect.ownKeys(descriptors).some(id=>!item.ids.includes(id)||!('value' in descriptors[id])||typeof descriptors[id].value!=='function'))throw new Error('Callback manifest mismatch: '+item.id);\n allCallbacks[item.id]=Object.fromEntries(Reflect.ownKeys(descriptors).map(id=>[id,descriptors[id].value]));\n}\nObject.assign(settings,${JSON.stringify(p.settings)});\n${registrations.join('\n')}\n`;
+  const openLinkImpl = hasActions
+    ? 'actions.openLink'
+    : '(url, opts = {}) => { if (opts.newTab) { if (typeof api !== "undefined" && api.RUNTIME) { api.RUNTIME("openLink", { tab: { tabbed: true, active: opts.active ?? true }, url: url instanceof URL ? url.href : url }); } else if (typeof RUNTIME !== "undefined") { RUNTIME("openLink", { tab: { tabbed: true, active: opts.active ?? true }, url: url instanceof URL ? url.href : url }); } else { window.open(url, "_blank"); } return; } window.location.assign(url); }';
+
+  const runtime = `${roots.join('\n')}\nconst allCallbacks=Object.create(null);\nconst factoryResults=[${factories.join(',')}].map(item=>{\n const services=Object.freeze(Object.fromEntries(item.capabilities.map(id=>{\n  if(id==='core.openLink')return ['openLink',${openLinkImpl}];\n  if(id==='core.createHints')return ['createHints',(...args)=>api.Front.createHints(...args)];\n  if(id==='core.clickElement')return ['clickElement',(sel)=>()=>api.Front.clickElement(sel)];\n  if(id==='core.clipboard')return ['clipboard',{read:(cb)=>api.Clipboard.read(cb),write:(t)=>api.Clipboard.write(t)}];\n  if(id==='core.omnibar')return ['omnibar',(opts)=>api.Front.openOmnibar(opts)];\n  if(id==='core.secretStorage')return ['secretStorage',{get:(k)=>k?undefined:{},set:async()=>{}}];\n  throw new Error('Unknown capability: '+id);\n })));\n return {item,returned:item.factory(services)};\n});\nfor(const {item,returned} of factoryResults){\n if(!returned||typeof returned!=='object')throw new Error('Invalid factory result');\n if(Object.getPrototypeOf(returned)!==Object.prototype&&Object.getPrototypeOf(returned)!==null)throw new Error('Invalid factory result prototype');\n const own=Object.getOwnPropertyDescriptors(returned);\n if(!own.callbacks||!('value' in own.callbacks)||!own.callbacks.value||typeof own.callbacks.value!=='object')throw new Error('Invalid callbacks');\n if(Object.getPrototypeOf(own.callbacks.value)!==Object.prototype&&Object.getPrototypeOf(own.callbacks.value)!==null)throw new Error('Invalid callbacks prototype');\n const descriptors=Object.getOwnPropertyDescriptors(own.callbacks.value);\n if(item.required.some(id=>!Object.hasOwn(descriptors,id))||Reflect.ownKeys(descriptors).some(id=>!item.ids.includes(id)||!('value' in descriptors[id])||typeof descriptors[id].value!=='function'))throw new Error('Callback manifest mismatch: '+item.id);\n allCallbacks[item.id]=Object.fromEntries(Reflect.ownKeys(descriptors).map(id=>[id,descriptors[id].value]));\n}\nObject.assign(settings,${JSON.stringify(p.settings)});\n${registrations.join('\n')}\n`;
 
   await writeFile(path.join(dir, 'entry.js'), runtime);
   files.push('entry.js');

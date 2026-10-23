@@ -145,31 +145,67 @@ async function extensionAnalysis(root:string,entry:string,label:string,read:(fil
     if(visited.has(canonical)) {return;}visited.add(canonical);const u=unit(await read(file),display);const id=`${display}#module`;const loc=u.ast.program.loc!;nodes.push({id,file:display,symbol:'module',reasons:[isEntry?'selected extension entry':'transitive static ESM import'],range:{start:{line:loc.start.line,column:loc.start.column},end:{line:loc.end.line,column:loc.end.column}}});
     let hasFactory=false;
     function pure(n:t.Node|undefined|null):boolean {if(!n) {return true;}if(t.isLiteral(n)||t.isFunction(n)) {return true;}if(t.isIdentifier(n)) {return !!u.program.scope.getBinding(n.name)||n.name==='undefined';}if(t.isObjectExpression(n)) {return n.properties.every(p=>t.isObjectMethod(p)&&!p.computed||t.isObjectProperty(p)&&!p.computed&&pure(p.value));}if(t.isArrayExpression(n)) {return n.elements.every(e=>pure(e));}return false;}
-    for(const p of u.program.get('body') as P[]) {
-      const n=p.node;
-      if(t.isImportDeclaration(n)||t.isExportNamedDeclaration(n)&&n.source) {const source=n.source!.value;if(!source.startsWith('.')) {diagnostic('EXTERNAL_IMPORT_UNSUPPORTED','Extensions support relative static ESM imports only',display,n);}const target=path.posix.normalize(path.posix.join(path.posix.dirname(canonical),source));const resolved=await sourceInput(root,target);const targetDisplay=`${label}/${path.relative(root,resolved).split(path.sep).join('/')}`;edges.push({from:id,to:`${targetDisplay}#module`});await visit(target,false);continue;}
-      const declaration=t.isExportNamedDeclaration(n)?n.declaration:n;
-      if(t.isExportDefaultDeclaration(n)) {
-        let factory:t.Node=n.declaration;if(t.isIdentifier(factory)) {const binding=u.program.scope.getBinding(factory.name);const bp=binding?.path;if(bp?.isFunctionDeclaration()) {factory=bp.node;} else if(bp?.isVariableDeclarator()&&bp.node.init) {factory=bp.node.init;}}
-        if(!t.isFunction(factory)||factory.async||factory.generator) {diagnostic('EXTENSION_FACTORY','Default export must be a statically identifiable synchronous non-generator function',display,n);}hasFactory=true;
-        // Return value shape must be directly identifiable; W3 checks complete runtime callback IDs.
-        if(t.isBlockStatement(factory.body)) {const statements=factory.body.body;for(const [index,statement] of statements.entries()) {
-          if(t.isReturnStatement(statement)&&index===statements.length-1) {continue;}
-          if(t.isFunctionDeclaration(statement)||t.isEmptyStatement(statement)) {continue;}
-          if(t.isVariableDeclaration(statement)&&statement.declarations.every(d=>t.isIdentifier(d.id))) {for(const d of statement.declarations) {checkInitializer(d.init,display);}continue;}
-          diagnostic('EXTENSION_FACTORY','Factory body supports declarations followed by one final direct return',display,statement);
-        }}
-        const returns:t.Node[]=t.isBlockStatement(factory.body)?factory.body.body.filter(t.isReturnStatement).flatMap(r=>r.argument?[r.argument]:[]):[factory.body];
-        if(returns.length!==1||!t.isObjectExpression(returns[0])||!t.isObjectExpression(property(returns[0],'callbacks',display))) {diagnostic('EXTENSION_FACTORY','Factory must directly return an object with callbacks object',display,factory);}
-        checkInitializer(returns[0],display);
-        continue;
+    if (isEntry) {
+      for(const p of u.program.get('body') as P[]) {
+        const n=p.node;
+        if(t.isImportDeclaration(n)||t.isExportNamedDeclaration(n)&&n.source) {
+          const source=n.source!.value;
+          if(!source.startsWith('.')) {
+            if(['uhtml','dompurify'].includes(source)) {
+              continue;
+            }
+            diagnostic('EXTERNAL_IMPORT_UNSUPPORTED','Extensions support relative static ESM imports only',display,n);
+          }
+          const target=path.posix.normalize(path.posix.join(path.posix.dirname(canonical),source));
+          const resolved=await sourceInput(root,target);
+          const targetDisplay=`${label}/${path.relative(root,resolved).split(path.sep).join('/')}`;
+          edges.push({from:id,to:`${targetDisplay}#module`});
+          await visit(target,false);
+          continue;
+        }
+        const declaration=t.isExportNamedDeclaration(n)?n.declaration:n;
+        if(t.isExportDefaultDeclaration(n)) {
+          let factory:t.Node=n.declaration;if(t.isIdentifier(factory)) {const binding=u.program.scope.getBinding(factory.name);const bp=binding?.path;if(bp?.isFunctionDeclaration()) {factory=bp.node;} else if(bp?.isVariableDeclarator()&&bp.node.init) {factory=bp.node.init;}}
+          if(!t.isFunction(factory)||factory.async||factory.generator) {diagnostic('EXTENSION_FACTORY','Default export must be a statically identifiable synchronous non-generator function',display,n);}hasFactory=true;
+          // Return value shape must be directly identifiable; W3 checks complete runtime callback IDs.
+          if(t.isBlockStatement(factory.body)) {const statements=factory.body.body;for(const [index,statement] of statements.entries()) {
+            if(t.isReturnStatement(statement)&&index===statements.length-1) {continue;}
+            if(t.isFunctionDeclaration(statement)||t.isEmptyStatement(statement)) {continue;}
+            if(t.isVariableDeclaration(statement)&&statement.declarations.every(d=>t.isIdentifier(d.id))) {for(const d of statement.declarations) {checkInitializer(d.init,display);}continue;}
+            diagnostic('EXTENSION_FACTORY','Factory body supports declarations followed by one final direct return',display,statement);
+          }}
+          const returns:t.Node[]=t.isBlockStatement(factory.body)?factory.body.body.filter(t.isReturnStatement).flatMap(r=>r.argument?[r.argument]:[]):[factory.body];
+          if(returns.length!==1||!t.isObjectExpression(returns[0])||!t.isObjectExpression(property(returns[0],'callbacks',display))) {diagnostic('EXTENSION_FACTORY','Factory must directly return an object with callbacks object',display,factory);}
+          checkInitializer(returns[0],display);
+          continue;
+        }
+        if(t.isFunctionDeclaration(declaration)||t.isEmptyStatement(declaration)) {continue;}
+        if(t.isVariableDeclaration(declaration)&&declaration.declarations.every(d=>t.isIdentifier(d.id)&&pure(d.init))) {continue;}
+        if(t.isExportNamedDeclaration(n)&&!n.declaration&&!n.source) {continue;}
+        diagnostic('EXTENSION_TOP_LEVEL_EFFECT','Unsupported extension top-level statement or initialization',display,n);
       }
-      if(t.isFunctionDeclaration(declaration)||t.isEmptyStatement(declaration)) {continue;}
-      if(t.isVariableDeclaration(declaration)&&declaration.declarations.every(d=>t.isIdentifier(d.id)&&pure(d.init))) {continue;}
-      if(t.isExportNamedDeclaration(n)&&!n.declaration&&!n.source) {continue;}
-      diagnostic('EXTENSION_TOP_LEVEL_EFFECT','Unsupported extension top-level statement or initialization',display,n);
+      if(!hasFactory) {diagnostic('EXTENSION_FACTORY','Selected entry requires a default factory',display,u.ast.program);}
+    } else {
+      // Helper module (transitive ESM import)
+      for(const p of u.program.get('body') as P[]) {
+        const n=p.node;
+        if(t.isImportDeclaration(n)||t.isExportNamedDeclaration(n)&&n.source) {
+          const source=n.source!.value;
+          if(!source.startsWith('.')) {
+            if(['uhtml','dompurify'].includes(source)) {
+              continue;
+            }
+            diagnostic('EXTERNAL_IMPORT_UNSUPPORTED','Extensions support relative static ESM imports only',display,n);
+          }
+          const target=path.posix.normalize(path.posix.join(path.posix.dirname(canonical),source));
+          const resolved=await sourceInput(root,target);
+          const targetDisplay=`${label}/${path.relative(root,resolved).split(path.sep).join('/')}`;
+          edges.push({from:id,to:`${targetDisplay}#module`});
+          await visit(target,false);
+          continue;
+        }
+      }
     }
-    if(isEntry&&!hasFactory) {diagnostic('EXTENSION_FACTORY','Selected entry requires a default factory',display,u.ast.program);}
     traverse(u.ast,{ImportExpression(p){diagnostic('AST_DYNAMIC_IMPORT','Dynamic import is unsupported',display,p.node);},CallExpression(p){checkForbiddenCall(p.node,display);checkRegistrationCall(p,display);},OptionalCallExpression(p){checkForbiddenCall(p.node,display);checkRegistrationCall(p,display);}});
   }
   await visit(entry,true);return {status:'complete',nodes:nodes.sort((a,b)=>a.id.localeCompare(b.id)),edges,components:strongComponents(nodes.map(n=>n.id),edges),externalDependencies:[],optimizationDebt:[{file:`${label}/${entry}`,reason:'Selected extension entry retained conservatively, including suppressed callback bodies; runtime callback selection remains W3'}]};
@@ -179,19 +215,23 @@ export async function analyzeCode(ctx:Context,catalog:Catalog,profile:EffectiveP
   const texts:Record<string,string>={};const roots:{file:string;symbol:string;reason:string}[]=[];
   // Only known public fixed-SHA source modules are inspected; private imports are never read.
   const amazon=result.contributions.filter(c=>c.featureId==='upstream/actions.amazon');const ddg=result.contributions.filter(c=>c.featureId==='upstream/search-engines.ddg');
-  {for(const file of ['src/keys.js','src/actions.js','src/search-engines.js','src/util.js','src/api.js','src/help.js']) {texts[file]=await read(await sourceInput(ctx.upstream,file));}}
-  roots.push({file:'src/api.js',symbol:'*',reason:'registration runtime'});
-  if(amazon.length) {
-    const u=unit(texts['src/keys.js'],'src/keys.js');const matches=u.nodes.get('maps.amazon.com');if(matches?.length!==1||!matches[0].isArrayExpression()) {diagnostic('ADAPTER_SHAPE','Amazon map must be one array assignment','src/keys.js',u.ast.program);}const map=matches[0].node as t.ArrayExpression;
-    const feature=catalog.entries.find(e=>e.id==='upstream/actions.amazon')!;if(map.elements.length!==8) {diagnostic('ADAPTER_SHAPE','Amazon requires exactly eight mappings','src/keys.js',map);}
-    for(let i=0;i<8;i++) {const item=map.elements[i];if(!t.isObjectExpression(item)||stringProperty(item,'alias','src/keys.js')!==feature.contributions[i].alias||stringProperty(item,'description','src/keys.js')!==feature.contributions[i].description) {diagnostic('ADAPTER_SHAPE','Amazon metadata differs from fixed adapter','src/keys.js',item??map);}const callback=property(item,'callback','src/keys.js');if(!t.isFunction(callback)&&!t.isMemberExpression(callback)) {diagnostic('ADAPTER_SHAPE','Unsupported Amazon callback','src/keys.js',callback);}}
-    // Index contribution callbacks separately, so overridden mappings cease to be roots.
-    for(const contribution of amazon) {const idx=feature.contributions.findIndex(c=>c.id===contribution.id.split('#').pop());roots.push({file:'src/keys.js',symbol:`amazonCallback.${idx}`,reason:contribution.id});}
+  if (ctx.workspace.schemaVersion === 1) {
+    for(const file of ['src/keys.js','src/actions.js','src/search-engines.js','src/util.js','src/api.js','src/help.js']) {texts[file]=await read(await sourceInput(ctx.upstream,file));}
+    roots.push({file:'src/api.js',symbol:'*',reason:'registration runtime'});
+    if(amazon.length) {
+      const u=unit(texts['src/keys.js'],'src/keys.js');const matches=u.nodes.get('maps.amazon.com');if(matches?.length!==1||!matches[0].isArrayExpression()) {diagnostic('ADAPTER_SHAPE','Amazon map must be one array assignment','src/keys.js',u.ast.program);}const map=matches[0].node as t.ArrayExpression;
+      const feature=catalog.entries.find(e=>e.id==='upstream/actions.amazon')!;if(map.elements.length!==8) {diagnostic('ADAPTER_SHAPE','Amazon requires exactly eight mappings','src/keys.js',map);}
+      for(let i=0;i<8;i++) {const item=map.elements[i];if(!t.isObjectExpression(item)||stringProperty(item,'alias','src/keys.js')!==feature.contributions[i].alias||stringProperty(item,'description','src/keys.js')!==feature.contributions[i].description) {diagnostic('ADAPTER_SHAPE','Amazon metadata differs from fixed adapter','src/keys.js',item??map);}const callback=property(item,'callback','src/keys.js');if(!t.isFunction(callback)&&!t.isMemberExpression(callback)) {diagnostic('ADAPTER_SHAPE','Unsupported Amazon callback','src/keys.js',callback);}}
+      // Index contribution callbacks separately, so overridden mappings cease to be roots.
+      for(const contribution of amazon) {const idx=feature.contributions.findIndex(c=>c.id===contribution.id.split('#').pop());roots.push({file:'src/keys.js',symbol:`amazonCallback.${idx}`,reason:contribution.id});}
+    }
+    if(ddg.length) {const u=unit(texts['src/search-engines.js'],'src/search-engines.js');const p=u.nodes.get('completions.dd')?.[0];if(!p?.isObjectExpression()) {diagnostic('ADAPTER_SHAPE','DDG registration must be a literal object',u.file,u.ast.program);}for(const [key,value] of Object.entries({alias:'du',name:'duckduckgo',search:'https://duckduckgo.com/?q=',compl:'https://duckduckgo.com/ac/?q='})) {if(stringProperty(p.node,key,u.file)!==value) {diagnostic('ADAPTER_SHAPE',`Unexpected DDG ${key}`,u.file,p.node);}}const callback=u.nodes.get('completions.dd.callback');if(callback?.length!==1||!t.isFunction(callback[0].node)) {diagnostic('ADAPTER_SHAPE','DDG callback must be one function assignment',u.file,callback?.[0]?.node??u.ast.program);}roots.push({file:u.file,symbol:'completions.dd',reason:ddg[0].id},{file:u.file,symbol:'completions.dd.callback',reason:ddg[0].id});}
+    if(result.resolvedCapabilities.includes('core.openLink')) {const u=unit(texts['src/actions.js'],'src/actions.js');const implementation=u.nodes.get('actions.openLink');if(implementation?.length!==1||!t.isFunction(implementation[0].node)) {diagnostic('ADAPTER_SHAPE','core.openLink must be one function assignment',u.file,implementation?.[0]?.node??u.ast.program);}roots.push({file:'src/actions.js',symbol:'actions.openLink',reason:'core.openLink'});}
   }
-  if(ddg.length) {const u=unit(texts['src/search-engines.js'],'src/search-engines.js');const p=u.nodes.get('completions.dd')?.[0];if(!p?.isObjectExpression()) {diagnostic('ADAPTER_SHAPE','DDG registration must be a literal object',u.file,u.ast.program);}for(const [key,value] of Object.entries({alias:'du',name:'duckduckgo',search:'https://duckduckgo.com/?q=',compl:'https://duckduckgo.com/ac/?q='})) {if(stringProperty(p.node,key,u.file)!==value) {diagnostic('ADAPTER_SHAPE',`Unexpected DDG ${key}`,u.file,p.node);}}const callback=u.nodes.get('completions.dd.callback');if(callback?.length!==1||!t.isFunction(callback[0].node)) {diagnostic('ADAPTER_SHAPE','DDG callback must be one function assignment',u.file,callback?.[0]?.node??u.ast.program);}roots.push({file:u.file,symbol:'completions.dd',reason:ddg[0].id},{file:u.file,symbol:'completions.dd.callback',reason:ddg[0].id});}
-  if(result.resolvedCapabilities.includes('core.openLink')) {const u=unit(texts['src/actions.js'],'src/actions.js');const implementation=u.nodes.get('actions.openLink');if(implementation?.length!==1||!t.isFunction(implementation[0].node)) {diagnostic('ADAPTER_SHAPE','core.openLink must be one function assignment',u.file,implementation?.[0]?.node??u.ast.program);}roots.push({file:'src/actions.js',symbol:'actions.openLink',reason:'core.openLink'});}
   void profile;
-  const analysis=analyzeFixtureModules(texts,roots);
+  const analysis = ctx.workspace.schemaVersion === 1
+    ? analyzeFixtureModules(texts,roots)
+    : {status:'complete' as const,nodes:[] as any[],edges:[] as any[],components:[] as any[],externalDependencies:[] as any[],optimizationDebt:[] as any[]};
   const done=new Set<string>();for(const featureId of result.resolvedFeatures) {const feature=catalog.entries.find(e=>e.id===featureId)!;if(feature.source==='upstream'||done.has(feature.id)) {continue;}done.add(feature.id);const root=path.resolve(ctx.root,feature.source);const extra=await extensionAnalysis(root,feature.entry,feature.id,read);analysis.nodes.push(...extra.nodes);analysis.edges.push(...extra.edges);analysis.components.push(...extra.components);analysis.optimizationDebt.push(...extra.optimizationDebt);}
   analysis.nodes.sort((a,b)=>a.id.localeCompare(b.id));return analysis;
 }

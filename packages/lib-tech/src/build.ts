@@ -22,7 +22,7 @@ export async function buildLibTech(): Promise<void> {
     repoBase: 'https://github.com/' + m[1] + '/' + m[2]
   };
 }
-export default { parseGithubRepo };
+export default () => ({ callbacks: {} });
 `;
   await writeFile(path.join(distDir, 'utils/index.js'), utilsJs, 'utf8');
 

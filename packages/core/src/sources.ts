@@ -102,13 +102,17 @@ export async function snapshot(ctx: Context): Promise<SourcesLock> {
 
   if (ctx.workspace.schemaVersion === 2) {
     const libraries: Source[] = [];
-    if (ctx.upstream) {
-      const b0oSource = await source(ctx.upstream, false);
-      libraries.push({...b0oSource, id: '@skcb/lib-b0o', namespace: 'b0o'});
-    }
+    const seenNamespaces = new Set<string>();
     for (const root of ctx.extensions) {
       const manifest = await json<Manifest>(await sourceInput(root, 'selective.json'), 'manifest');
-      libraries.push({...await source(root, false), id: manifest.namespace, namespace: manifest.namespace});
+      if (seenNamespaces.has(manifest.namespace)) continue;
+      seenNamespaces.add(manifest.namespace);
+      const isB0o = manifest.namespace === 'b0o';
+      libraries.push({
+        ...await source(root, false),
+        id: isB0o ? '@skcb/lib-b0o' : manifest.namespace,
+        namespace: manifest.namespace
+      });
     }
     return {
       schemaVersion: 2,

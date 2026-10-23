@@ -14,7 +14,10 @@
   ],
   "properties": {
     "schemaVersion": {
-      "const": 1
+      "enum": [
+        1,
+        2
+      ]
     },
     "profileId": {
       "type": "string",
@@ -94,6 +97,42 @@
               "additionalProperties": {
                 "type": "string"
               }
+            },
+            "schemaVersion": {
+              "type": "integer"
+            },
+            "extends": {
+              "type": "string"
+            },
+            "selectAdd": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "selectRemove": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "selectRemoveContributions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "conflictResolution": {
+              "type": "object"
+            },
+            "moduleOptions": {
+              "type": "object"
+            },
+            "locale": {
+              "type": "string"
             }
           },
           "required": [
@@ -134,14 +173,25 @@
                     "enum": [
                       "mapkey",
                       "map",
-                      "search"
+                      "search",
+                      "omnibar"
                     ]
                   },
                   "alias": {
                     "type": "string"
                   },
                   "description": {
-                    "type": "string"
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    ]
                   },
                   "leader": {
                     "type": "string"
@@ -328,13 +378,52 @@
                 ],
                 "additionalProperties": false
               }
+            },
+            "libraries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "sha": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "contentHash": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                },
+                "required": [
+                  "namespace",
+                  "sha",
+                  "contentHash"
+                ],
+                "additionalProperties": false
+              }
             }
           },
-          "required": [
-            "upstream",
-            "extensions"
-          ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "required": [
+                "upstream",
+                "extensions"
+              ]
+            },
+            {
+              "required": [
+                "libraries"
+              ]
+            }
+          ]
         },
         "toolchain": {
           "type": "object",
@@ -457,6 +546,42 @@
               "additionalProperties": {
                 "type": "string"
               }
+            },
+            "schemaVersion": {
+              "type": "integer"
+            },
+            "extends": {
+              "type": "string"
+            },
+            "selectAdd": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "selectRemove": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "selectRemoveContributions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "conflictResolution": {
+              "type": "object"
+            },
+            "moduleOptions": {
+              "type": "object"
+            },
+            "locale": {
+              "type": "string"
             }
           },
           "required": [
@@ -519,14 +644,25 @@
                 "enum": [
                   "mapkey",
                   "map",
-                  "search"
+                  "search",
+                  "omnibar"
                 ]
               },
               "alias": {
                 "type": "string"
               },
               "description": {
-                "type": "string"
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                ]
               },
               "leader": {
                 "type": "string"
@@ -867,14 +1003,25 @@
                         "enum": [
                           "mapkey",
                           "map",
-                          "search"
+                          "search",
+                          "omnibar"
                         ]
                       },
                       "alias": {
                         "type": "string"
                       },
                       "description": {
-                        "type": "string"
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string"
+                            }
+                          }
+                        ]
                       },
                       "leader": {
                         "type": "string"
@@ -1035,6 +1182,12 @@
         "pending": {
           "type": "array",
           "maxItems": 0
+        },
+        "removedContributions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [

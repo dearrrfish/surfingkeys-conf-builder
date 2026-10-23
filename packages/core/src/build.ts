@@ -40,7 +40,7 @@ export interface BuildResult {
 }
 
 export interface BuildReport {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   profileId: string;
   buildId: string;
   inputHash: string;
@@ -220,7 +220,14 @@ export async function buildInternal(request: BuildRequest, hooks?: BuildHooks): 
     const result = explain(profile, catalog) as any;
     await verifySources(ctx);
     const capture = new Map<string, string>();
-    capture.set(await sourceInput(ctx.upstream, 'LICENSE'), await readFile(await sourceInput(ctx.upstream, 'LICENSE'), 'utf8'));
+    let upstreamLicense = '';
+    if (ctx.upstream) {
+      try {
+        const lic = await sourceInput(ctx.upstream, 'LICENSE');
+        upstreamLicense = await readFile(lic, 'utf8');
+        capture.set(lic, upstreamLicense);
+      } catch {}
+    }
     const graph = await analyzeCode(ctx, catalog, profile, result, capture);
     const lock = await verifySources(ctx);
     await hooks?.afterCapture?.();
@@ -257,12 +264,12 @@ export async function buildInternal(request: BuildRequest, hooks?: BuildHooks): 
     await mkdir(stage);
     const generated = await generateGraph(ctx, catalog, profile, result, graph, capture, path.join(stage, 'generated'));
     await hooks?.beforeBundle?.();
-    const bundled = await bundle(generated.entry, stage, mode, capture.get(await sourceInput(ctx.upstream, 'LICENSE'))!);
+    const bundled = await bundle(generated.entry, stage, mode, upstreamLicense);
     await writeSynced(path.join(stage, 'THIRD_PARTY_NOTICES.txt'), bundled.notices);
     const script = await readFile(path.join(stage, 'surfingkeys.js'));
     const notices = Buffer.from(bundled.notices);
     const report: BuildReport = {
-      schemaVersion: 1,
+      schemaVersion: ctx.workspace.schemaVersion === 2 ? 2 : 1,
       profileId: profile.id,
       buildId: id,
       inputHash: id,

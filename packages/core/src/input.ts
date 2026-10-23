@@ -145,6 +145,20 @@ export async function workspace(file: string): Promise<Context> {
     }
     if (privatePath(resolvedRoot)) { fail('PATH_INVALID', 'Resolved source root targets private input'); }
     if (contained(resolvedRoot, root)) { fail('SOURCE_ROOT_OVERLAP', 'Source root cannot equal or contain the workspace root'); }
+
+    // If dist/selective.json exists (e.g. built npm package) and selective.json is not at the package root, resolve to dist
+    try {
+      const direct = await stat(path.join(resolvedRoot, 'selective.json'));
+      if (!direct.isFile()) throw new Error();
+    } catch {
+      try {
+        const dist = await stat(path.join(resolvedRoot, 'dist', 'selective.json'));
+        if (dist.isFile()) {
+          resolvedRoot = path.join(resolvedRoot, 'dist');
+        }
+      } catch {}
+    }
+
     return resolvedRoot;
   }
 

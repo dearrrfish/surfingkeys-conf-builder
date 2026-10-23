@@ -2,6 +2,9 @@
   "schemaVersion": 2,
   "id": "work",
   "extends": "common.json",
+  "settings": {
+    "defaultSearchEngine": "gh"
+  },
   "selectAdd": [
     "tech/actions.github",
     "tech/search-engines.github",

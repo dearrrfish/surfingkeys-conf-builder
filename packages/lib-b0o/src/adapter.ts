@@ -79,11 +79,7 @@ export async function buildB0oAdapter(options: AdapterOptions = {}): Promise<voi
   const upstreamApi = await readFile(path.join(upstreamDir, 'src/api.js'), 'utf8');
   await writeFile(path.join(outputDir, 'shared/api.js'), upstreamApi, 'utf8');
 
-  // 3. Generate dist/shared/conf.priv.js (safe stub)
-  const stubPriv = `export default { keys: {} };\n`;
-  await writeFile(path.join(outputDir, 'shared/conf.priv.js'), stubPriv, 'utf8');
-
-  // 4. Generate dist/shared/util.js (with MV3 browser.storage.local guard)
+  // 3. Generate dist/shared/util.js (with MV3 browser.storage.local guard)
   let utilContent = await readFile(path.join(upstreamDir, 'src/util.js'), 'utf8');
   // MV3 guard injection
   utilContent = utilContent.replace(
@@ -92,10 +88,10 @@ export async function buildB0oAdapter(options: AdapterOptions = {}): Promise<voi
   );
   await writeFile(path.join(outputDir, 'shared/util.js'), utilContent, 'utf8');
 
-  // 5. Generate dist/shared/actions.js
+  // 4. Generate dist/shared/actions.js
   let actionsContent = await readFile(path.join(upstreamDir, 'src/actions.js'), 'utf8');
   actionsContent = actionsContent.replace('import ghReservedNames from "github-reserved-names"\n', 'const ghReservedNames = [];\n');
-  actionsContent = actionsContent.replace('import priv from "./conf.priv.js"', 'import priv from "./conf.priv.js"');
+  actionsContent = actionsContent.replace('import priv from "./conf.priv.js"', 'const priv = { keys: {} };');
   await writeFile(path.join(outputDir, 'shared/actions.js'), actionsContent, 'utf8');
 
   // 6. Generate Actions modules
