@@ -20,4 +20,5 @@ node_modules/
 dist-tool/
 dist/
 dist-adapter/
+dist-build/
 .generated/

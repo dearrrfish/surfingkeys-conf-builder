@@ -1,0 +1,32 @@
+{
+  "name": "@skcb/lib-prod",
+  "version": "0.2.0",
+  "description": "Native productivity modules for SurfingKeys (Gmail HTML view, Pinboard bookmark manager)",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./selective.json": "./dist/selective.json",
+    "./*": "./dist/*"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && node dist-build/build.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@skcb/core": "workspace:*",
+    "@types/node": "24.0.0",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

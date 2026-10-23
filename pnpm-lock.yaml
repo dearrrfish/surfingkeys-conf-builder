@@ -111,6 +111,42 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/lib-ent:
+    devDependencies:
+      '@skcb/core':
+        specifier: workspace:*
+        version: link:../core
+      '@types/node':
+        specifier: 24.0.0
+        version: 24.0.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/lib-prod:
+    devDependencies:
+      '@skcb/core':
+        specifier: workspace:*
+        version: link:../core
+      '@types/node':
+        specifier: 24.0.0
+        version: 24.0.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/lib-tech:
+    devDependencies:
+      '@skcb/core':
+        specifier: workspace:*
+        version: link:../core
+      '@types/node':
+        specifier: 24.0.0
+        version: 24.0.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/ui:
     dependencies:
       '@skcb/core':
