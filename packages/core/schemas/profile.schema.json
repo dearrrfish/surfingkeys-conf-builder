@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "enum": [
+        1,
+        2
+      ]
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "locale": {
+      "enum": [
+        "en",
+        "zh-CN"
+      ]
+    },
+    "abstract": {
+      "type": "boolean"
+    },
+    "extends": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base": {
+      "enum": [
+        "minimal",
+        "upstream-global"
+      ]
+    },
+    "selectAdd": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines|omnibar|utils)\\.[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "uniqueItems": true
+    },
+    "selectRemove": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines|omnibar|utils)\\.[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "uniqueItems": true
+    },
+    "selectRemoveContributions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines|omnibar|utils)\\.[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "uniqueItems": true
+    },
+    "conflictResolution": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": [
+            "strict",
+            "prefer-later",
+            "module-precedence"
+          ]
+        },
+        "modulePrecedence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "settings": {
+      "type": "object"
+    },
+    "unsetSettings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "leaders": {
+      "type": "object",
+      "properties": {
+        "site": {
+          "type": "string"
+        },
+        "search": {
+          "type": "string"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "overrides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines|omnibar|utils)\\.[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "with": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines|omnibar|utils)\\.[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
+          }
+        },
+        "required": [
+          "target",
+          "with"
+        ],
+        "additionalProperties": false
+      },
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id"
+  ],
+  "additionalProperties": false
+}

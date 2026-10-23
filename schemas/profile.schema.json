@@ -3,11 +3,20 @@
   "type": "object",
   "properties": {
     "schemaVersion": {
-      "const": 1
+      "enum": [
+        1,
+        2
+      ]
     },
     "id": {
       "type": "string",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "locale": {
+      "enum": [
+        "en",
+        "zh-CN"
+      ]
     },
     "abstract": {
       "type": "boolean"
@@ -26,7 +35,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines)\\.[a-z0-9]+(?:-[a-z0-9]+)*$"
+        "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines|omnibar|utils)\\.[a-z0-9]+(?:-[a-z0-9]+)*$"
       },
       "uniqueItems": true
     },
@@ -34,9 +43,38 @@
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines)\\.[a-z0-9]+(?:-[a-z0-9]+)*$"
+        "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines|omnibar|utils)\\.[a-z0-9]+(?:-[a-z0-9]+)*$"
       },
       "uniqueItems": true
+    },
+    "selectRemoveContributions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines|omnibar|utils)\\.[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "uniqueItems": true
+    },
+    "conflictResolution": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": [
+            "strict",
+            "prefer-later",
+            "module-precedence"
+          ]
+        },
+        "modulePrecedence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
     },
     "settings": {
       "type": "object"
@@ -70,12 +108,12 @@
           "target": {
             "type": "string",
             "minLength": 1,
-            "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines)\\.[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
+            "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines|omnibar|utils)\\.[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
           },
           "with": {
             "type": "string",
             "minLength": 1,
-            "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines)\\.[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
+            "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines|omnibar|utils)\\.[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
           }
         },
         "required": [

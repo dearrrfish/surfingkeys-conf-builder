@@ -1,0 +1,37 @@
+{
+  "name": "@skcb/ui",
+  "version": "0.2.0",
+  "description": "SurfingKeys Config Builder visual builder and configuration distribution server",
+  "type": "module",
+  "bin": {
+    "skcb-ui": "dist/server.js"
+  },
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "ui",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && node -e \"require('node:fs').chmodSync('dist/server.js',0o755)\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@skcb/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.0",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

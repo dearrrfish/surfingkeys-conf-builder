@@ -1,0 +1,47 @@
+{
+  "name": "@skcb/core",
+  "version": "0.2.0",
+  "description": "SurfingKeys Config Builder core compiler, schemas, types, and build engine",
+  "type": "module",
+  "bin": {
+    "skcb": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schemas/*": "./schemas/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && node -e \"require('node:fs').chmodSync('dist/cli.js',0o755)\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@babel/generator": "7.28.5",
+    "@babel/parser": "7.28.5",
+    "@babel/traverse": "7.28.5",
+    "@babel/types": "7.28.5",
+    "ajv": "8.17.1",
+    "dompurify": "3.4.16",
+    "uhtml": "3.2.2",
+    "webpack": "5.111.1"
+  },
+  "devDependencies": {
+    "@types/babel__generator": "7.27.0",
+    "@types/babel__traverse": "7.28.0",
+    "@types/node": "24.0.0",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

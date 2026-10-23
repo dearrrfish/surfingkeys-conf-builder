@@ -1,84 +1,146 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "properties": {
-    "schemaVersion": {
-      "const": 1
-    },
-    "digestRule": {
-      "const": "sha256-path-content-v1-private-excluded"
-    },
-    "adapterVersion": {
-      "const": "b0o-v1-static-1"
-    },
-    "upstream": {
+  "oneOf": [
+    {
       "type": "object",
       "properties": {
-        "root": {
-          "type": "string",
-          "minLength": 1
+        "schemaVersion": {
+          "const": 1
         },
-        "contentHash": {
+        "digestRule": {
+          "const": "sha256-path-content-v1-private-excluded"
+        },
+        "adapterVersion": {
+          "const": "b0o-v1-static-1"
+        },
+        "upstream": {
+          "type": "object",
+          "properties": {
+            "root": {
+              "type": "string",
+              "minLength": 1
+            },
+            "contentHash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "sha": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{40}$"
+            },
+            "namespace": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "root",
+            "contentHash",
+            "sha"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "root": {
+                "type": "string",
+                "minLength": 1
+              },
+              "contentHash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "sha": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{40}$"
+              },
+              "namespace": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "root",
+              "contentHash"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "toolchainHash": {
           "type": "string",
           "pattern": "^[a-f0-9]{64}$"
-        },
-        "sha": {
-          "type": "string",
-          "pattern": "^[a-f0-9]{40}$"
-        },
-        "namespace": {
-          "type": "string",
-          "minLength": 1
         }
       },
       "required": [
-        "root",
-        "contentHash",
-        "sha"
+        "schemaVersion",
+        "digestRule",
+        "adapterVersion",
+        "upstream",
+        "extensions",
+        "toolchainHash"
       ],
       "additionalProperties": false
     },
-    "extensions": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "root": {
-            "type": "string",
-            "minLength": 1
-          },
-          "contentHash": {
-            "type": "string",
-            "pattern": "^[a-f0-9]{64}$"
-          },
-          "sha": {
-            "type": "string",
-            "pattern": "^[a-f0-9]{40}$"
-          },
-          "namespace": {
-            "type": "string",
-            "minLength": 1
+    {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": 2
+        },
+        "digestRule": {
+          "const": "sha256-path-content-v1-private-excluded"
+        },
+        "libraries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "root": {
+                "type": "string",
+                "minLength": 1
+              },
+              "contentHash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "version": {
+                "type": "string"
+              },
+              "sha": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{40}$"
+              },
+              "namespace": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "contentHash"
+            ],
+            "additionalProperties": false
           }
         },
-        "required": [
-          "root",
-          "contentHash"
-        ],
-        "additionalProperties": false
-      }
-    },
-    "toolchainHash": {
-      "type": "string",
-      "pattern": "^[a-f0-9]{64}$"
+        "toolchainHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "digestRule",
+        "libraries",
+        "toolchainHash"
+      ],
+      "additionalProperties": false
     }
-  },
-  "required": [
-    "schemaVersion",
-    "digestRule",
-    "adapterVersion",
-    "upstream",
-    "extensions",
-    "toolchainHash"
-  ],
-  "additionalProperties": false
+  ]
 }
