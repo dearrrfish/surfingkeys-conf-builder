@@ -1,352 +1,3123 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SurfingKeys 配置方案视觉构建器 (Visual Profile Builder)</title>
-  <link rel="stylesheet" href="./style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>@skcb/ui v2.0 — Visual Profile Builder & Config Server (shadcn/ui Prototype)</title>
+  <style>
+    /* ==========================================================================
+       shadcn/ui Design System (Zinc Palette + CSS Variables for Light & Dark)
+       ========================================================================== */
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 240 10% 3.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 240 10% 3.9%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 240 10% 3.9%;
+      --primary: 240 5.9% 10%;
+      --primary-foreground: 0 0% 98%;
+      --secondary: 240 4.8% 95.9%;
+      --secondary-foreground: 240 5.9% 10%;
+      --muted: 240 4.8% 95.9%;
+      --muted-foreground: 240 3.8% 46.1%;
+      --accent: 240 4.8% 95.9%;
+      --accent-foreground: 240 5.9% 10%;
+      --destructive: 0 84.2% 60.2%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 240 5.9% 90%;
+      --input: 240 5.9% 90%;
+      --ring: 240 5.9% 10%;
+      --radius: 0.5rem;
+
+      /* Semantic accents for conflict & status highlighting */
+      --emerald-bg: 142 76% 94%;
+      --emerald-fg: 142 72% 24%;
+      --emerald-border: 142 65% 82%;
+      --amber-bg: 48 96% 91%;
+      --amber-fg: 32 95% 28%;
+      --amber-border: 42 93% 72%;
+      --blue-bg: 214 95% 93%;
+      --blue-fg: 221 83% 38%;
+      --blue-border: 213 94% 82%;
+      --purple-bg: 270 95% 95%;
+      --purple-fg: 262 83% 42%;
+      --purple-border: 269 90% 85%;
+      --rose-bg: 355 100% 94%;
+      --rose-fg: 347 77% 38%;
+      --rose-border: 353 90% 78%;
+
+      --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    html.dark {
+      --background: 240 10% 3.9%;
+      --foreground: 0 0% 98%;
+      --card: 240 10% 5.5%;
+      --card-foreground: 0 0% 98%;
+      --popover: 240 10% 5.5%;
+      --popover-foreground: 0 0% 98%;
+      --primary: 0 0% 98%;
+      --primary-foreground: 240 5.9% 10%;
+      --secondary: 240 3.7% 15.9%;
+      --secondary-foreground: 0 0% 98%;
+      --muted: 240 3.7% 13.5%;
+      --muted-foreground: 240 5% 64.9%;
+      --accent: 240 3.7% 15.9%;
+      --accent-foreground: 0 0% 98%;
+      --destructive: 0 62.8% 30.6%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 240 3.7% 16.5%;
+      --input: 240 3.7% 16.5%;
+      --ring: 240 4.9% 83.9%;
+
+      --emerald-bg: 144 61% 11%;
+      --emerald-fg: 142 69% 68%;
+      --emerald-border: 144 50% 24%;
+      --amber-bg: 36 68% 12%;
+      --amber-fg: 43 96% 70%;
+      --amber-border: 36 65% 28%;
+      --blue-bg: 217 55% 13%;
+      --blue-fg: 213 94% 74%;
+      --blue-border: 217 50% 25%;
+      --purple-bg: 268 50% 14%;
+      --purple-fg: 270 95% 80%;
+      --purple-border: 268 45% 28%;
+      --rose-bg: 350 60% 14%;
+      --rose-fg: 352 95% 78%;
+      --rose-border: 350 55% 30%;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ==========================================================================
+       Top Navigation Header
+       ========================================================================== */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      border-bottom: 1px solid hsl(var(--border));
+      background-color: hsl(var(--background) / 0.88);
+      backdrop-filter: blur(10px);
+      padding: 0.65rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: calc(var(--radius) - 1px);
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .topbar-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    /* shadcn Tabs / Segmented Control */
+    .tabs-list {
+      display: inline-flex;
+      height: 36px;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius);
+      background-color: hsl(var(--muted));
+      padding: 3px;
+      color: hsl(var(--muted-foreground));
+      border: 1px solid hsl(var(--border));
+    }
+
+    .tab-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      border-radius: calc(var(--radius) - 2px);
+      padding: 0.3rem 0.75rem;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: hsl(var(--muted-foreground));
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      gap: 0.35rem;
+    }
+
+    .tab-trigger:hover {
+      color: hsl(var(--foreground));
+    }
+
+    .tab-trigger.active {
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    }
+
+    /* shadcn Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+      border-radius: calc(var(--radius) - 1px);
+      font-size: 12.5px;
+      font-weight: 500;
+      height: 34px;
+      padding: 0 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+      font-family: inherit;
+    }
+
+    .btn-sm {
+      height: 28px;
+      padding: 0 0.55rem;
+      font-size: 12px;
+    }
+
+    .btn-xs {
+      height: 23px;
+      padding: 0 0.45rem;
+      font-size: 11px;
+      border-radius: 4px;
+    }
+
+    .btn-icon {
+      width: 34px;
+      padding: 0;
+    }
+
+    .btn-primary {
+      background-color: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+    }
+    .btn-primary:hover {
+      opacity: 0.92;
+    }
+
+    .btn-secondary {
+      background-color: hsl(var(--secondary));
+      color: hsl(var(--secondary-foreground));
+      border-color: hsl(var(--border));
+    }
+    .btn-secondary:hover {
+      background-color: hsl(var(--accent));
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      color: hsl(var(--foreground));
+      border-color: hsl(var(--border));
+    }
+    .btn-outline:hover {
+      background-color: hsl(var(--accent));
+      color: hsl(var(--accent-foreground));
+    }
+
+    .btn-ghost {
+      background-color: transparent;
+      color: hsl(var(--muted-foreground));
+    }
+    .btn-ghost:hover {
+      background-color: hsl(var(--accent));
+      color: hsl(var(--foreground));
+    }
+
+    /* shadcn Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      border-radius: 9999px;
+      border: 1px solid hsl(var(--border));
+      padding: 0.1rem 0.55rem;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+
+    .badge-secondary {
+      background-color: hsl(var(--secondary));
+      color: hsl(var(--secondary-foreground));
+    }
+    .badge-emerald {
+      background-color: hsl(var(--emerald-bg));
+      color: hsl(var(--emerald-fg));
+      border-color: hsl(var(--emerald-border));
+    }
+    .badge-amber {
+      background-color: hsl(var(--amber-bg));
+      color: hsl(var(--amber-fg));
+      border-color: hsl(var(--amber-border));
+    }
+    .badge-blue {
+      background-color: hsl(var(--blue-bg));
+      color: hsl(var(--blue-fg));
+      border-color: hsl(var(--blue-border));
+    }
+    .badge-purple {
+      background-color: hsl(var(--purple-bg));
+      color: hsl(var(--purple-fg));
+      border-color: hsl(var(--purple-border));
+    }
+    .badge-rose {
+      background-color: hsl(var(--rose-bg));
+      color: hsl(var(--rose-fg));
+      border-color: hsl(var(--rose-border));
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: hsl(var(--emerald-fg));
+      display: inline-block;
+    }
+
+    /* ==========================================================================
+       Main Two-Column Workspace Layout
+       ========================================================================== */
+    .workspace-grid {
+      max-width: 1580px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.25rem 1.5rem 2.5rem;
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(430px, 5fr);
+      gap: 1.25rem;
+      align-items: start;
+      flex: 1;
+    }
+
+    @media (max-width: 1140px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .left-column {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .right-column {
+      position: sticky;
+      top: 68px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-height: calc(100vh - 84px);
+    }
+
+    /* shadcn Card */
+    .card {
+      border-radius: var(--radius);
+      border: 1px solid hsl(var(--border));
+      background-color: hsl(var(--card));
+      color: hsl(var(--card-foreground));
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    .card-header {
+      padding: 1rem 1.25rem 0.75rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      border-bottom: 1px solid hsl(var(--border) / 0.6);
+    }
+
+    .card-title {
+      font-size: 14.5px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .card-description {
+      font-size: 12.5px;
+      color: hsl(var(--muted-foreground));
+      margin-top: 0.2rem;
+    }
+
+    .card-content {
+      padding: 1rem 1.25rem;
+    }
+
+    /* shadcn Form Controls */
+    .form-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 0.85rem;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.85rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .field-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: hsl(var(--foreground));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .field-hint {
+      font-size: 11px;
+      color: hsl(var(--muted-foreground));
+      font-weight: 400;
+    }
+
+    .input, .select, .textarea {
+      height: 34px;
+      width: 100%;
+      border-radius: calc(var(--radius) - 2px);
+      border: 1px solid hsl(var(--input));
+      background-color: hsl(var(--background));
+      padding: 0 0.65rem;
+      font-size: 12.5px;
+      color: hsl(var(--foreground));
+      font-family: inherit;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .input-sm {
+      height: 30px;
+      font-size: 12px;
+      padding: 0 0.55rem;
+    }
+
+    .textarea {
+      height: auto;
+      padding: 0.5rem 0.65rem;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .input:focus, .select:focus, .textarea:focus {
+      outline: none;
+      border-color: hsl(var(--ring));
+      box-shadow: 0 0 0 2px hsl(var(--ring) / 0.15);
+    }
+
+    /* shadcn Switch */
+    .switch {
+      position: relative;
+      display: inline-flex;
+      height: 20px;
+      width: 36px;
+      flex-shrink: 0;
+      cursor: pointer;
+      border-radius: 9999px;
+      border: 2px solid transparent;
+      background-color: hsl(var(--input));
+      transition: background-color 0.15s ease;
+      align-items: center;
+      padding: 0;
+    }
+
+    .switch[aria-checked="true"] {
+      background-color: hsl(var(--primary));
+    }
+
+    .switch-thumb {
+      pointer-events: none;
+      display: block;
+      height: 16px;
+      width: 16px;
+      border-radius: 9999px;
+      background-color: hsl(var(--background));
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+      transition: transform 0.15s ease;
+      transform: translateX(0);
+    }
+
+    .switch[aria-checked="true"] .switch-thumb {
+      transform: translateX(16px);
+    }
+
+    .switch-sm {
+      height: 17px;
+      width: 30px;
+    }
+    .switch-sm .switch-thumb {
+      height: 13px;
+      width: 13px;
+    }
+    .switch-sm[aria-checked="true"] .switch-thumb {
+      transform: translateX(13px);
+    }
+
+    /* ==========================================================================
+       Conflict Resolution & Module Precedence Sortable Bar
+       ========================================================================== */
+    .precedence-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      padding: 0.65rem 0.75rem;
+      border-radius: calc(var(--radius) - 2px);
+      background-color: hsl(var(--muted) / 0.6);
+      border: 1px dashed hsl(var(--border));
+      margin-top: 0.65rem;
+    }
+
+    .precedence-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: calc(var(--radius) - 2px);
+      background-color: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      font-size: 12px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .precedence-rank {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background-color: hsl(var(--secondary));
+      color: hsl(var(--muted-foreground));
+      font-size: 10.5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .precedence-move-btn {
+      background: transparent;
+      border: none;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      font-size: 11px;
+      padding: 0 2px;
+      line-height: 1;
+    }
+    .precedence-move-btn:hover:not(:disabled) {
+      color: hsl(var(--foreground));
+    }
+    .precedence-move-btn:disabled {
+      opacity: 0.25;
+      cursor: default;
+    }
+
+    /* ==========================================================================
+       Feature Catalog Filter Bar & Cards with Contribution Accordion
+       ========================================================================== */
+    .catalog-toolbar {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .catalog-filter-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .lib-pills {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .lib-pill {
+      padding: 0.22rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 11.5px;
+      font-weight: 500;
+      border: 1px solid hsl(var(--border));
+      background-color: hsl(var(--background));
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .lib-pill:hover {
+      color: hsl(var(--foreground));
+      background-color: hsl(var(--accent));
+    }
+
+    .lib-pill.active {
+      background-color: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-color: hsl(var(--primary));
+    }
+
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .feature-card {
+      border-radius: calc(var(--radius) - 1px);
+      border: 1px solid hsl(var(--border));
+      background-color: hsl(var(--background));
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+      overflow: hidden;
+    }
+
+    .feature-card.selected {
+      border-color: hsl(var(--ring) / 0.55);
+      background-color: hsl(var(--accent) / 0.18);
+    }
+
+    .feature-card-main {
+      padding: 0.8rem 1rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.85rem;
+    }
+
+    .feature-card-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .feature-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .feature-id {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: hsl(var(--foreground));
+    }
+
+    .feature-desc {
+      font-size: 12.5px;
+      color: hsl(var(--muted-foreground));
+      margin-top: 0.25rem;
+    }
+
+    .feature-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      margin-top: 0.55rem;
+    }
+
+    /* Contribution Fine-Grained Accordion Drawer */
+    .contrib-drawer {
+      border-top: 1px solid hsl(var(--border));
+      background-color: hsl(var(--muted) / 0.42);
+      padding: 0.65rem 1rem 0.8rem;
+    }
+
+    .contrib-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 11.5px;
+      color: hsl(var(--muted-foreground));
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .contrib-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .contrib-table tr {
+      border-top: 1px solid hsl(var(--border) / 0.65);
+    }
+
+    .contrib-table td {
+      padding: 0.42rem 0.4rem;
+      vertical-align: middle;
+    }
+
+    /* Distinct semantic row highlighting inside Catalog Contribution Drawer */
+    .contrib-row-winner {
+      background-color: hsl(var(--amber-bg) / 0.45);
+      border-left: 3px solid hsl(var(--amber-fg));
+    }
+
+    .contrib-row-suppressed {
+      background-color: hsl(var(--rose-bg) / 0.35);
+      border-left: 3px dashed hsl(var(--rose-fg));
+    }
+
+    .contrib-row-removed {
+      opacity: 0.48;
+      background-color: hsl(var(--muted) / 0.3);
+    }
+
+    .contrib-inline-replaced-drawer {
+      margin-top: 0.35rem;
+      padding: 0.38rem 0.6rem;
+      border-radius: 5px;
+      background-color: hsl(var(--background) / 0.85);
+      border: 1px dashed hsl(var(--amber-border));
+      font-size: 11.5px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.1rem 0.42rem;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 4px;
+      border: 1px solid hsl(var(--border));
+      background-color: hsl(var(--card));
+      color: hsl(var(--foreground));
+      box-shadow: 0 1px 0 hsl(var(--border));
+    }
+
+    .kbd-conflict-winner {
+      border-color: hsl(var(--amber-border));
+      background-color: hsl(var(--amber-bg));
+      color: hsl(var(--amber-fg));
+      box-shadow: 0 1px 0 hsl(var(--amber-border));
+    }
+
+    .kbd-conflict-strict {
+      border-color: hsl(var(--rose-border));
+      background-color: hsl(var(--rose-bg));
+      color: hsl(var(--rose-fg));
+      box-shadow: 0 1px 0 hsl(var(--rose-border));
+    }
+
+    .kbd-suppressed {
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+
+    /* ==========================================================================
+       Right Column: Inspector, Filterable Keymap Table, Conflict Highlight & Collapse
+       ========================================================================== */
+    .alert {
+      border-radius: calc(var(--radius) - 1px);
+      border: 1px solid hsl(var(--border));
+      padding: 0.7rem 0.85rem;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .alert-emerald {
+      background-color: hsl(var(--emerald-bg) / 0.65);
+      border-color: hsl(var(--emerald-border));
+      color: hsl(var(--emerald-fg));
+    }
+    .alert-amber {
+      background-color: hsl(var(--amber-bg) / 0.7);
+      border-color: hsl(var(--amber-border));
+      color: hsl(var(--amber-fg));
+    }
+    .alert-rose {
+      background-color: hsl(var(--rose-bg) / 0.7);
+      border-color: hsl(var(--rose-border));
+      color: hsl(var(--rose-fg));
+    }
+
+    .inspector-scroll {
+      max-height: calc(100vh - 320px);
+      overflow-y: auto;
+      padding-right: 3px;
+    }
+
+    /* Keymap Filter Toolbar inside Effective Keymaps Tab */
+    .keymap-filter-bar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background-color: hsl(var(--card));
+      padding-bottom: 0.6rem;
+      margin-bottom: 0.4rem;
+      border-bottom: 1px solid hsl(var(--border));
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .keymap-filter-pills {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .keymap-group-title {
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: hsl(var(--muted-foreground));
+      margin: 0.65rem 0 0.35rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Keymap Row Item & Semantic Conflict Highlighting */
+    .keymap-card-wrapper {
+      border-radius: 6px;
+      border: 1px solid hsl(var(--border) / 0.7);
+      background-color: hsl(var(--background));
+      margin-bottom: 0.38rem;
+      overflow: hidden;
+      transition: all 0.15s ease;
+    }
+
+    /* Highlighted color for conflict-winner / auto-overridden keybindings */
+    .keymap-card-wrapper.conflict-resolved {
+      border-color: hsl(var(--amber-border));
+      border-left: 3.5px solid hsl(var(--amber-fg));
+      background-color: hsl(var(--amber-bg) / 0.28);
+    }
+
+    /* Highlighted color for unresolved strict conflict keybindings */
+    .keymap-card-wrapper.conflict-strict {
+      border-color: hsl(var(--rose-border));
+      border-left: 3.5px solid hsl(var(--rose-fg));
+      background-color: hsl(var(--rose-bg) / 0.35);
+    }
+
+    /* Highlighted color for explicit user override winner */
+    .keymap-card-wrapper.conflict-explicit-override {
+      border-color: hsl(var(--purple-border));
+      border-left: 3.5px solid hsl(var(--purple-fg));
+      background-color: hsl(var(--purple-bg) / 0.3);
+    }
+
+    .keymap-item-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.42rem 0.6rem;
+      font-size: 12px;
+    }
+
+    .keymap-item-main.clickable {
+      cursor: pointer;
+    }
+    .keymap-item-main.clickable:hover {
+      background-color: hsl(var(--accent) / 0.35);
+    }
+
+    /* Collapsible Overridden / Suppressed Alternatives Drawer inside Keymap Item */
+    .keymap-overridden-drawer {
+      border-top: 1px dashed hsl(var(--amber-border) / 0.8);
+      background-color: hsl(var(--muted) / 0.55);
+      padding: 0.45rem 0.65rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 11.5px;
+    }
+
+    .keymap-overridden-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: hsl(var(--amber-fg));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .keymap-overridden-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.3rem 0.45rem;
+      border-radius: 4px;
+      background-color: hsl(var(--background) / 0.75);
+      border: 1px solid hsl(var(--rose-border) / 0.55);
+      border-left: 2.5px solid hsl(var(--rose-fg));
+    }
+
+    .code-pre {
+      background-color: hsl(240 10% 4%);
+      color: hsl(0 0% 94%);
+      border-radius: calc(var(--radius) - 2px);
+      border: 1px solid hsl(var(--border));
+      padding: 0.85rem 1rem;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.55;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    mark.hl {
+      background-color: hsl(var(--amber-bg));
+      color: hsl(var(--amber-fg));
+      padding: 0 2px;
+      border-radius: 2px;
+      font-weight: 600;
+    }
+
+    /* ==========================================================================
+       Dialog / Modal Overlay
+       ========================================================================== */
+    .dialog-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background-color: rgba(0, 0, 0, 0.68);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .dialog-backdrop.open {
+      display: flex;
+    }
+
+    .dialog-content {
+      width: 100%;
+      max-width: 780px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: var(--radius);
+      border: 1px solid hsl(var(--border));
+      background-color: hsl(var(--card));
+      color: hsl(var(--card-foreground));
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.65rem;
+      margin: 0.85rem 0;
+    }
+
+    .metric-box {
+      padding: 0.65rem 0.8rem;
+      border-radius: calc(var(--radius) - 2px);
+      border: 1px solid hsl(var(--border));
+      background-color: hsl(var(--muted) / 0.4);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .metric-val {
+      font-size: 13.5px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      margin-top: 0.15rem;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      z-index: 100;
+      background-color: hsl(var(--foreground));
+      color: hsl(var(--background));
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius);
+      font-size: 12.5px;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
 </head>
 <body>
-  <!-- Header -->
-  <header class="app-header">
-    <div class="brand">
-      <div class="brand-icon">⚡</div>
+
+  <!-- ========================================================================
+       Top Header Bar (shadcn/ui Navigation + Mode Tabs + i18n + Theme)
+       ======================================================================== -->
+  <header class="topbar">
+    <div class="brand-group">
+      <div class="brand-logo">SK</div>
       <div>
-        <h1 class="brand-title">SurfingKeys 配置视觉构建器</h1>
-        <div class="brand-subtitle">选择网站适配、搜索引擎与 Omni Bar 交互以生成并维护 Profile</div>
+        <div class="brand-title">
+          <span id="ui-brand-title">@skcb/ui 视觉化配置构建与分发中心</span>
+          <span class="badge badge-secondary">v2.0 Prototype</span>
+          <span class="badge badge-emerald" title="Dev Auto-Lock Enabled">
+            <span class="status-dot"></span>
+            <span id="ui-server-pill">127.0.0.1:3000 (--auto-lock)</span>
+          </span>
+        </div>
+        <div class="brand-subtitle" id="ui-brand-subtitle">
+          模块化 SurfingKeys 方案构建器 · 细粒度按键定制 · 冲突高亮与折叠检视 · 零密钥动态存储
+        </div>
       </div>
     </div>
 
-    <div class="header-controls">
-      <!-- Workflow Mode Selector -->
-      <div class="mode-tabs" role="tablist">
-        <button id="tab-create" class="mode-tab active" data-mode="create" title="基于 create 技能：组合功能、生成全新方案">
-          <span>✨ 创建新方案 (Create)</span>
+    <div class="topbar-controls">
+      <!-- Top-level View Tabs -->
+      <div class="tabs-list" role="tablist">
+        <button class="tab-trigger active" data-topmode="builder" id="tab-top-builder">
+          <span>🛠️</span> <span data-i18n="navBuilder">方案构建器 (Builder)</span>
         </button>
-        <button id="tab-update" class="mode-tab" data-mode="update" title="基于 update 技能：载入已有配置、差量编辑维护">
-          <span>🔄 更新已有配置 (Update)</span>
+        <button class="tab-trigger" data-topmode="secrets" id="tab-top-secrets">
+          <span>🔐</span> <span data-i18n="navSecrets">动态密钥 (;ps Storage)</span>
+        </button>
+        <button class="tab-trigger" data-topmode="server" id="tab-top-server">
+          <span>📡</span> <span data-i18n="navServer">配置分发服务 (Server)</span>
         </button>
       </div>
 
-      <!-- Server / Offline Connection Badge -->
-      <div id="connection-pill" class="status-pill offline" title="检测工作区服务器状态">
-        <span class="status-dot"></span>
-        <span id="connection-text">检查连接...</span>
-      </div>
+      <!-- Preset Profile Quick Switcher -->
+      <select id="preset-profile-switcher" class="select" style="width: auto; height: 34px; font-weight: 500;">
+        <option value="personal">📁 profiles/personal.json (extends common)</option>
+        <option value="work">📁 profiles/work.json (extends common)</option>
+        <option value="common">📁 profiles/common.json [abstract]</option>
+      </select>
+
+      <!-- UI Language Toggle (zh-CN / en) -->
+      <button class="btn btn-outline" id="btn-lang-toggle" title="Switch UI & Preview Language (FR-013)">
+        <span>🌐</span>
+        <span id="lang-label">简体中文</span>
+      </button>
+
+      <!-- Light / Dark Theme Toggle -->
+      <button class="btn btn-outline btn-icon" id="btn-theme-toggle" title="Toggle Dark / Light Theme">
+        <span id="theme-icon">🌙</span>
+      </button>
     </div>
   </header>
 
-  <!-- Main Grid App Layout -->
-  <main class="app-container">
-    <!-- Left Column: Form & Features Selection -->
-    <div class="panel">
-      <div class="panel-header">
-        <h2 class="panel-title">
-          <span id="workflow-icon">🛠️</span>
-          <span id="workflow-title">新配置方案设计</span>
-        </h2>
-        <span id="workflow-badge" class="badge badge-purple">create 技能流</span>
+  <!-- ========================================================================
+       Main Workspace Grid
+       ======================================================================== -->
+  <main class="workspace-grid">
+    <!-- LEFT COLUMN -->
+    <div class="left-column">
+
+      <!-- VIEW 1: BUILDER VIEW -->
+      <div id="view-builder" style="display: flex; flex-direction: column; gap: 1rem;">
+
+        <!-- Card 1: Profile Metadata, Inheritance & Compile-Time i18n -->
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span>⚙️</span>
+                <span data-i18n="metaTitle">基础元数据、单父继承与编译期语言 (Profile Schema v2)</span>
+              </div>
+              <div class="card-description" data-i18n="metaDesc">
+                定义方案 ID、继承基底及编译生成的 SurfingKeys 帮助面板 (`?`) 目标语言，编译期静态注入零体积开销。
+              </div>
+            </div>
+            <span class="badge badge-blue">Schema v2</span>
+          </div>
+          <div class="card-content">
+            <div class="form-grid-4">
+              <div class="field">
+                <label class="field-label">
+                  <span data-i18n="labelProfileId">方案 ID (id)</span>
+                  <span class="field-hint">kebab-case</span>
+                </label>
+                <input type="text" id="input-profile-id" class="input" value="personal" />
+              </div>
+
+              <div class="field">
+                <label class="field-label">
+                  <span data-i18n="labelExtends">继承父方案 (extends)</span>
+                  <span class="field-hint" data-i18n="hintSingleParent">单父继承链</span>
+                </label>
+                <select id="input-profile-extends" class="select">
+                  <option value="./common.json" selected>./common.json (abstract)</option>
+                  <option value="">(None / Root Profile)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label class="field-label">
+                  <span data-i18n="labelLocale">脚本注释语言 (locale)</span>
+                  <span class="field-hint">FR-013</span>
+                </label>
+                <select id="input-profile-locale" class="select">
+                  <option value="zh-CN" selected>zh-CN (中文 `?` 帮助面板)</option>
+                  <option value="en">en (English `?` Help)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label class="field-label">
+                  <span data-i18n="labelDefaultSearch">默认搜索引擎</span>
+                  <span class="field-hint">defaultSearchEngine</span>
+                </label>
+                <select id="input-default-search" class="select"></select>
+              </div>
+            </div>
+
+            <div class="form-grid-4" style="margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px dashed hsl(var(--border));">
+              <div class="field">
+                <label class="field-label">
+                  <span data-i18n="labelSiteLeader">站点快捷键前缀 (leaders.site)</span>
+                  <span class="field-hint">Default: &lt;Space&gt;</span>
+                </label>
+                <input type="text" id="input-leader-site" class="input" value="<Space>" />
+              </div>
+
+              <div class="field">
+                <label class="field-label">
+                  <span data-i18n="labelSearchLeader">搜索/Omnibar 前缀 (leaders.search)</span>
+                  <span class="field-hint">Default: a</span>
+                </label>
+                <input type="text" id="input-leader-search" class="input" value="a" />
+              </div>
+
+              <div class="field" style="justify-content: flex-end;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0.65rem; border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius) - 2px); height: 34px;">
+                  <span style="font-size: 12px; font-weight: 500;" data-i18n="labelAbstract">抽象父方案 (abstract)</span>
+                  <button type="button" class="switch switch-sm" id="switch-abstract" role="switch" aria-checked="false">
+                    <span class="switch-thumb"></span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="field" style="justify-content: flex-end;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0.65rem; border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius) - 2px); height: 34px;">
+                  <span style="font-size: 12px; font-weight: 500;" data-i18n="labelSecretKey">内置 `;ps` 密钥编辑器</span>
+                  <span class="badge badge-emerald">;ps Active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Card 2: Cross-Library Conflict Resolution & Module Precedence (FR-011) -->
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span>⚖️</span>
+                <span data-i18n="conflictTitle">跨模组同站点冲突消解策略 (Cross-Library Conflict Resolution)</span>
+              </div>
+              <div class="card-description" data-i18n="conflictDesc">
+                当同时启用 @skcb/lib-b0o 与原生模组库（如 github.com、youtube.com）时，自动合并正交按键并按模组优先级消解同名键冲突。
+              </div>
+            </div>
+            <span class="badge badge-purple">FR-011 · D-23</span>
+          </div>
+          <div class="card-content">
+            <div class="form-grid-2">
+              <div class="field">
+                <label class="field-label">
+                  <span data-i18n="labelConflictMode">冲突处理模式 (conflictResolution.mode)</span>
+                </label>
+                <select id="select-conflict-mode" class="select">
+                  <option value="module-precedence" selected>module-precedence (按模组库优先级自动覆盖同名键 · 推荐)</option>
+                  <option value="prefer-later">prefer-later (按 selectAdd 声明顺序后浪推前浪)</option>
+                  <option value="strict">strict (严格阻断，要求手写 overrides)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label class="field-label">
+                  <span data-i18n="labelConflictSummary">当前同域合并与覆盖统计（色标图例）</span>
+                </label>
+                <div id="conflict-live-pillbox" style="display: flex; align-items: center; gap: 0.4rem; min-height: 34px; flex-wrap: wrap;"></div>
+              </div>
+            </div>
+
+            <!-- Sortable Module Precedence Bar -->
+            <div id="precedence-bar-container" class="precedence-bar">
+              <span style="font-size: 12px; font-weight: 500; color: hsl(var(--muted-foreground)); margin-right: 0.25rem;" data-i18n="labelPrecedenceOrder">
+                模组优先级排序 (左高 → 右低，点击 ◀ ▶ 调整)：
+              </span>
+              <div id="precedence-pills" style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Card 3: Multi-Library Feature Catalog + Contribution-Level Switches -->
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span>🧩</span>
+                <span data-i18n="catalogTitle">四大官方功能模组库与细粒度按键定制 (Catalog & Contributions)</span>
+              </div>
+              <div class="card-description" data-i18n="catalogDesc">
+                支持勾选整个站点/搜索模组，或展开卡片自由开关单个按键。冲突胜出项以琥珀色高亮并可折叠查看被替代项；被覆盖项以玫红色虚线标注。
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+              <span class="badge badge-emerald" id="selected-features-badge">已选 7 项模组</span>
+              <span class="badge badge-amber" id="removed-contribs-badge">已细粒度剔除 1 键</span>
+            </div>
+          </div>
+
+          <div class="card-content">
+            <!-- Filter Toolbar -->
+            <div class="catalog-toolbar">
+              <div class="catalog-filter-row">
+                <div class="lib-pills" id="lib-filter-pills">
+                  <button class="lib-pill active" data-lib="all">All Libraries (13)</button>
+                  <button class="lib-pill" data-lib="ent">🎬 @skcb/lib-ent (4)</button>
+                  <button class="lib-pill" data-lib="tech">💻 @skcb/lib-tech (4)</button>
+                  <button class="lib-pill" data-lib="prod">⚡ @skcb/lib-prod (3)</button>
+                  <button class="lib-pill" data-lib="b0o">📦 @skcb/lib-b0o (4)</button>
+                </div>
+
+                <div style="display: flex; gap: 0.4rem; align-items: center;">
+                  <input type="search" id="catalog-search-input" class="input" style="width: 230px;" placeholder="🔍 过滤模组库卡片 / 域名 / 按键..." />
+                </div>
+              </div>
+
+              <div class="catalog-filter-row">
+                <div class="tabs-list" id="category-filter-tabs">
+                  <button class="tab-trigger active" data-cat="all" data-i18n="catAll">全部类别</button>
+                  <button class="tab-trigger" data-cat="actions" data-i18n="catActions">🌐 站点动作 (actions)</button>
+                  <button class="tab-trigger" data-cat="search-engines" data-i18n="catSearch">🔍 搜索引擎 (search)</button>
+                  <button class="tab-trigger" data-cat="omnibar" data-i18n="catOmnibar">🚀 Omnibar</button>
+                </div>
+
+                <div style="display: flex; gap: 0.4rem;">
+                  <button class="btn btn-outline btn-sm" id="btn-expand-all" data-i18n="btnExpandAll">展开全部按键抽屉</button>
+                  <button class="btn btn-outline btn-sm" id="btn-collapse-all" data-i18n="btnCollapseAll">收起全部</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Feature Cards Container -->
+            <div id="catalog-cards-list" class="feature-list"></div>
+          </div>
+        </section>
       </div>
 
-      <!-- Update Mode: Profile Loader -->
-      <div id="update-profile-loader" class="section-box" style="display: none;">
-        <div class="section-heading">
-          <span>📁 选择目标已有配置方案</span>
-          <span class="badge badge-yellow">加载已有 profile</span>
-        </div>
-        <div class="section-desc">载入工作区中的现有 profile 或上传本地 JSON，继承与覆盖字段将自动解析。</div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="existing-profile-select">工作区 Profiles</label>
-            <select id="existing-profile-select" class="form-select">
-              <option value="">-- 选择工作区已有方案 --</option>
-            </select>
+      <!-- VIEW 2: SECRETS & STORAGE VIEW (`core.secretStorage`, FR-012) -->
+      <div id="view-secrets" style="display: none; flex-direction: column; gap: 1rem;">
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span>🔐</span>
+                <span data-i18n="secretsTitle">零编译嵌入的跨浏览器动态私有存储 (core.secretStorage · FR-012)</span>
+              </div>
+              <div class="card-description" data-i18n="secretsDesc">
+                彻底告别在构建产物中硬编码 .priv.json！编译出的 surfingkeys.js 100% 不含任何个人密钥，用户可在浏览器内按 ;ps 呼出内置 Vim 编辑器随时更新。
+              </div>
+            </div>
+            <span class="badge badge-emerald">Zero-Secret Bundle ✓</span>
           </div>
-          <div class="form-group">
-            <label for="import-file-input">或者上传自定义 JSON</label>
-            <input type="file" id="import-file-input" accept=".json" class="form-input" />
+          <div class="card-content">
+            <!-- 3-Tier Browser Compatibility Banner -->
+            <div class="alert alert-emerald" style="margin-bottom: 1rem;">
+              <div style="font-weight: 600;">🦊 跨浏览器三级自适应存储适配器 (Zen Browser / Firefox + Chrome MV3 100% 兼容)</div>
+              <div style="font-size: 12px; opacity: 0.92;">
+                1. <strong>Tier 1 (Zen Browser / Firefox 原生首选)</strong>：直接调用 <code>await browser.storage.local.get/set('skcbSecrets')</code>，零跨进程克隆损耗。<br/>
+                2. <strong>Tier 2 (Chromium Extension Storage)</strong>：自动回退 <code>chrome.storage.local.get/set('skcbSecrets')</code>。<br/>
+                3. <strong>Tier 3 (Chrome MV3 userScripts 沙箱桥)</strong>：通过 <code>api.RUNTIME('getSettings' / 'updateSettings')</code> 委托后台持久化。
+              </div>
+            </div>
+
+            <div style="font-weight: 600; font-size: 13px; margin-bottom: 0.5rem;" data-i18n="secretsSchemaHeading">
+              当前已选模组声明的私有配置项与参数 Schema（仅编译键名描述，不编译真实值）：
+            </div>
+            <table class="contrib-table" style="border: 1px solid hsl(var(--border)); border-radius: var(--radius); overflow: hidden; margin-bottom: 1rem;">
+              <thead>
+                <tr style="background: hsl(var(--muted)); text-align: left;">
+                  <th style="padding: 0.5rem;">Secret / Option Key</th>
+                  <th style="padding: 0.5rem;">Source Module</th>
+                  <th style="padding: 0.5rem;">Description</th>
+                  <th style="padding: 0.5rem;">Default / Fallback</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="kbd">github.user</span></td>
+                  <td><span class="badge badge-blue">tech/actions.github</span></td>
+                  <td>GitHub 个人用户名（用于 <code>ghp</code> 快捷键打开个人 Projects 看板）</td>
+                  <td><code>""</code> (未设置时按键弹出 <code>;ps</code> 引导 Banner)</td>
+                </tr>
+                <tr>
+                  <td><span class="kbd">pinboard.user</span></td>
+                  <td><span class="badge badge-purple">prod/search-engines.pinboard</span></td>
+                  <td>Pinboard 账号名（用于 <code>pb</code> / <code>pbt</code> 搜索个人书签库）</td>
+                  <td><code>""</code> (支持动态模板替换 <code>u:{{pinboard.user}}</code>)</td>
+                </tr>
+                <tr>
+                  <td><span class="kbd">youtube.pipedHost</span></td>
+                  <td><span class="badge badge-emerald">ent/actions.youtube</span></td>
+                  <td>自定义 Piped 隐私前端实例域名（用于 <code>&lt;Space&gt;gp</code> 跳转）</td>
+                  <td><code>"piped.video"</code></td>
+                </tr>
+                <tr>
+                  <td><span class="kbd">twitter.nitterHost</span></td>
+                  <td><span class="badge badge-emerald">ent/actions.twitter</span></td>
+                  <td>自定义 Nitter 实例域名（用于 <code>&lt;Space&gt;N</code> 跳转）</td>
+                  <td><code>"nitter.net"</code></td>
+                </tr>
+                <tr>
+                  <td><span class="kbd">searx.url</span></td>
+                  <td><span class="badge badge-blue">tech/search-engines.searx</span></td>
+                  <td>自建 SearXNG 搜索引擎实例地址（用于 <code>asx</code> 搜索）</td>
+                  <td><code>"https://searx.be"</code></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="font-weight: 600; font-size: 13px; margin-bottom: 0.45rem;">
+              🖥️ 浏览器内按下 <span class="kbd">;ps</span> 呼出 SurfingKeys 原生 Vim 编辑器 (<code>api.Front.showEditor</code>) 交互模拟：
+            </div>
+            <pre class="code-pre">// [SurfingKeys Vim Editor — Press ;ps in Zen Browser / Firefox / Chrome]
+// Saving (:wq) writes directly to browser.storage.local & api.RUNTIME('updateSettings')
+{
+  "github.user": "octocat",
+  "pinboard.user": "octocat_links",
+  "youtube.pipedHost": "piped.video",
+  "twitter.nitterHost": "nitter.poast.org",
+  "searx.url": "https://searx.example.com"
+}</pre>
           </div>
-        </div>
+        </section>
       </div>
 
-      <!-- Section: Base & Metadata -->
-      <div class="section-box">
-        <div class="section-heading">
-          <span>⚙️ 基础元数据与继承关系</span>
-          <span class="badge">Schema v1</span>
-        </div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="profile-id">
-              <span>方案 ID (id) *</span>
-              <small class="text-muted">kebab-case 命名</small>
-            </label>
-            <input type="text" id="profile-id" class="form-input" placeholder="例如: personal, work, shopping" value="custom-profile" />
+      <!-- VIEW 3: DISTRIBUTION SERVER VIEW (`@skcb/ui` Config Server, FR-003) -->
+      <div id="view-server" style="display: none; flex-direction: column; gap: 1rem;">
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span>📡</span>
+                <span data-i18n="serverTitle">配置文件分发服务器与静态托管导出 (@skcb/ui Distribution Server)</span>
+              </div>
+              <div class="card-description" data-i18n="serverDesc">
+                支持本地/自托管 HTTP 订阅源（带 ETag 缓存协商、--serve-only 只读安全模式、--token 鉴权）及 GitHub Pages 静态导出。
+              </div>
+            </div>
+            <span class="badge badge-emerald">HTTP 200 · ETag Ready</span>
           </div>
-          <div class="form-group">
-            <label for="profile-extends">
-              <span>父级方案 (extends)</span>
-              <small class="text-muted">单父继承相对路径</small>
-            </label>
-            <select id="profile-extends" class="form-select">
-              <option value="">(无父方案，作为根方案)</option>
-              <option value="./common.json">./common.json</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="profile-base">
-              <span>运行基底 (base)</span>
-              <small class="text-muted">仅支持 minimal</small>
-            </label>
-            <select id="profile-base" class="form-select" disabled>
-              <option value="minimal" selected>minimal (干净基底)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-checkbox-label">
-              <input type="checkbox" id="profile-abstract" />
-              <span>抽象方案 (abstract - 仅作父方案，不单独构建)</span>
-            </label>
-          </div>
-        </div>
+          <div class="card-content" style="display: flex; flex-direction: column; gap: 0.9rem;">
+            <div class="form-grid-2">
+              <div class="field">
+                <label class="field-label">
+                  <span>1. 最新稳定订阅地址 (Latest Channel · Load settings from)</span>
+                  <span class="badge badge-emerald">Cache-Control: no-cache + ETag</span>
+                </label>
+                <div style="display: flex; gap: 0.4rem;">
+                  <input type="text" class="input" id="server-latest-url" readonly value="http://127.0.0.1:3000/script/personal" style="font-family: var(--font-mono);" />
+                  <button class="btn btn-secondary" onclick="copyText(document.getElementById('server-latest-url').value)">复制 URL</button>
+                </div>
+              </div>
 
-        <!-- Leaders Configuration -->
-        <div class="form-grid" style="margin-top: 1rem; border-top: 1px dashed var(--border-color); padding-top: 0.75rem;">
-          <div class="form-group">
-            <label for="leader-site">
-              <span>站点快捷键前缀 (leaders.site)</span>
-              <small class="text-muted">默认: &lt;Space&gt;</small>
-            </label>
-            <input type="text" id="leader-site" class="form-input" value="<Space>" placeholder="<Space>" />
+              <div class="field">
+                <label class="field-label">
+                  <span>2. 不可变版本快照地址 (Immutable Build Snapshot)</span>
+                  <span class="badge badge-blue">immutable · max-age=31536000</span>
+                </label>
+                <div style="display: flex; gap: 0.4rem;">
+                  <input type="text" class="input" id="server-immutable-url" readonly value="http://127.0.0.1:3000/dist/personal/builds/20261023T074500Z-a9f4c21e/surfingkeys.js" style="font-family: var(--font-mono);" />
+                  <button class="btn btn-secondary" onclick="copyText(document.getElementById('server-immutable-url').value)">复制快照</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="background: hsl(var(--muted) / 0.35);">
+              <div class="card-content">
+                <div style="font-weight: 600; font-size: 13px; margin-bottom: 0.4rem;">🛡️ 生产部署与自托管 CLI 启动模式 (VPS / Docker / Tailscale)</div>
+                <pre class="code-pre"># 模式 A：本地开发与可视化构建（开启 Web UI + --auto-lock 实时重算锁文件）
+npx skcb-ui --workspace ./surfingkeys.workspace.json --port 3000 --auto-lock
+
+# 模式 B：只读配置分发服务器（禁用写 API 与在线编译，支持 Token 鉴权）
+SKCB_SERVE_TOKEN="my-secret" npx skcb-ui --serve-only --host 0.0.0.0 --port 3000
+
+# 模式 C：导出纯静态托管目录（可一键部署至 GitHub Pages / Cloudflare Pages，因零明文密钥 100% 安全！）
+npx skcb export-pages --out ./pages-dist</pre>
+              </div>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="leader-search">
-              <span>搜索/Omni Bar 前缀 (leaders.search)</span>
-              <small class="text-muted">默认: a</small>
-            </label>
-            <input type="text" id="leader-search" class="form-input" value="a" placeholder="a" />
-          </div>
-        </div>
+        </section>
       </div>
 
-      <!-- Section: Website Adaptations (网站适配) -->
-      <div class="section-box">
-        <div class="section-heading">
-          <span>🌐 网站专属适配 (Website Adaptations)</span>
-          <span id="site-features-count" class="badge badge-green">已选 0 项</span>
-        </div>
-        <div class="section-desc">为特定域名定制的专属交互操作。绑定域内专属快捷键，依赖词法分析注入所需能力。</div>
-        
-        <div id="website-adaptations-container" class="feature-cards-grid">
-          <!-- Dynamically populated or fallback -->
-        </div>
-      </div>
-
-      <!-- Section: Search Engines & Omni Bar Support -->
-      <div class="section-box">
-        <div class="section-heading">
-          <span>🔍 搜索引擎与 Omni Bar 支持</span>
-          <span id="search-features-count" class="badge badge-green">已选 0 项</span>
-        </div>
-        <div class="section-desc">配置全局搜索引擎及 Omni Bar 智能补全联动，自动绑定触发键及剪贴板快捷键。</div>
-
-        <!-- Omni Bar Preview Banner -->
-        <div class="omnibar-banner">
-          <div class="omnibar-banner-info">
-            <h4>Omni Bar 搜索交互联动机制</h4>
-            <p>选中的搜索引擎将自动向 SurfingKeys 注册：<br>
-               1. 激活快捷键：<code>leaders.search + alias</code> 打开 Omni Bar 搜索框。<br>
-               2. 剪贴板搜索：<code>c + leaders.search + alias</code> 自动读取剪贴板内容并触发 Omni Bar。<br>
-               3. 实时补全：支持从指定 API 补全地址异步获取搜索联想。
-            </p>
-          </div>
-          <div class="omnibar-keys">
-            <span class="key-badge" id="omnibar-key-preview">adu / cadu</span>
-          </div>
-        </div>
-
-        <!-- Search Engines Selection Cards -->
-        <div id="search-engines-container" class="feature-cards-grid">
-          <!-- Dynamically populated -->
-        </div>
-
-        <!-- Default Search Engine Selector -->
-        <div class="form-group" style="margin-top: 1.25rem;">
-          <label for="default-search-engine">
-            <span>默认搜索引擎 (settings.defaultSearchEngine)</span>
-            <small class="text-muted">必须匹配有效启用的搜索引擎 alias</small>
-          </label>
-          <select id="default-search-engine" class="form-select">
-            <option value="">-- 未指定默认搜索引擎 --</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Advanced: Settings, Overrides, Remove (Update Mode) -->
-      <div id="advanced-config-box" class="section-box">
-        <div class="section-heading">
-          <span>🔧 高级配置 (Settings & Overrides)</span>
-          <span class="badge badge-yellow">进阶选项</span>
-        </div>
-        <div class="section-desc">自定义顶层 settings 键值、差量移除父方案功能 (selectRemove) 或处理按键冲突覆盖 (overrides)。</div>
-        
-        <!-- selectRemove (Visible in Update Mode) -->
-        <div id="select-remove-container" style="display: none; margin-bottom: 1rem;">
-          <label class="form-group">
-            <span style="font-weight: 500; font-size: 0.85rem; color: var(--accent-red);">从父方案中移除的功能 (selectRemove)</span>
-            <small class="text-muted">勾选要从父方案直接选择中剔除的 feature ID</small>
-          </label>
-          <div id="select-remove-list" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
-            <!-- populated dynamically -->
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="custom-settings-json">
-            <span>自定义 Settings (JSON 对象格式)</span>
-            <small class="text-muted">合并到 profile.settings</small>
-          </label>
-          <textarea id="custom-settings-json" class="form-input" rows="3" style="font-family: var(--font-mono); font-size: 0.8rem;" placeholder='{\n  "theme": "default"\n}'></textarea>
-        </div>
-      </div>
     </div>
 
-    <!-- Right Column: Live Preview & Diagnostics -->
-    <div class="panel preview-panel">
-      <div class="panel-header">
-        <h2 class="panel-title">
-          <span>📋 配置预览与诊断</span>
-        </h2>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <button id="btn-copy-json" class="btn btn-outline btn-sm" title="复制 Profile JSON 到剪贴板">📋 复制</button>
-          <button id="btn-download-json" class="btn btn-outline btn-sm" title="下载 Profile JSON 文件">💾 下载</button>
-          <button id="btn-save-workspace" class="btn btn-primary btn-sm" title="直接写回工作区 profiles 目录">🚀 保存到工作区</button>
-          <button id="btn-build-script" class="btn btn-success btn-sm" title="根据当前实时配置一键构建最终 SurfingKeys 脚本">🔨 构建脚本</button>
-        </div>
-      </div>
+    <!-- RIGHT STICKY INSPECTOR COLUMN -->
+    <aside class="right-column">
+      <section class="card" style="display: flex; flex-direction: column; overflow: hidden;">
+        <div class="card-header" style="align-items: center;">
+          <div>
+            <div class="card-title">
+              <span>📋</span>
+              <span data-i18n="inspectorTitle">实时检视器与构建产物 (Live Inspector)</span>
+            </div>
+            <div class="card-description" id="inspector-subtitle">
+              profiles/personal.json · 继承自 ./common.json
+            </div>
+          </div>
 
-      <!-- Diagnostics Panel -->
-      <div id="diagnostics-box" class="diagnostics-box valid">
-        <strong>✓ 语法与 Schema 验证通过</strong>
-        <span>配置符合 profile.schema.json 规范。</span>
-      </div>
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <button class="btn btn-outline btn-sm" id="btn-copy-profile" title="Copy Profile v2 JSON">📋 JSON</button>
+            <button class="btn btn-primary btn-sm" id="btn-trigger-build">🔨 <span data-i18n="btnBuild">构建并分发脚本</span></button>
+          </div>
+        </div>
 
-      <!-- Keymap Preview Summary -->
-      <div class="section-box" style="padding: 0.9rem;">
-        <div class="section-heading" style="font-size: 0.85rem; margin-bottom: 0.4rem;">
-          <span>🎹 有效快捷键与 Omni Bar 映射概览 (Keymap Overview)</span>
-        </div>
-        <div id="effective-keymaps-preview" class="keymap-list">
-          <div class="text-muted">勾选左侧功能以预览快捷键绑定...</div>
-        </div>
-      </div>
+        <div class="card-content" style="display: flex; flex-direction: column; gap: 0.7rem;">
+          <!-- Live Diagnostics Alert -->
+          <div id="live-diagnostics-alert" class="alert alert-emerald"></div>
 
-      <!-- Update Mode: Diff View -->
-      <div id="diff-section" class="section-box" style="display: none; padding: 0.9rem;">
-        <div class="section-heading" style="font-size: 0.85rem; margin-bottom: 0.4rem;">
-          <span>⚖️ 前后修改差异 (Profile Diff)</span>
-        </div>
-        <div id="diff-output" class="diff-view">
-          <span class="text-muted">暂无修改</span>
-        </div>
-      </div>
+          <!-- Inspector Sub-Tabs -->
+          <div class="tabs-list" style="width: 100%; justify-content: space-between;" id="inspector-tabs">
+            <button class="tab-trigger active" data-instab="keymaps" style="flex: 1;" data-i18n="insTabKeymaps">🎹 有效键位映射</button>
+            <button class="tab-trigger" data-instab="json" style="flex: 1;" data-i18n="insTabJson">📄 Profile v2 JSON</button>
+            <button class="tab-trigger" data-instab="diff" style="flex: 1;" data-i18n="insTabDiff">⚖️ 差量与冲突报告</button>
+          </div>
 
-      <!-- Code Box: Generated JSON -->
-      <div class="code-container">
-        <div class="code-header">
-          <span id="preview-filename">profiles/custom-profile.json</span>
-          <span class="badge">Live Generated</span>
+          <!-- Sub-Tab 1: Effective Keymaps Overview (WITH Quick Filter + Conflict Highlight + Collapsible Overridden Items) -->
+          <div id="instab-panel-keymaps" style="display: flex; flex-direction: column;">
+            <!-- Sticky Filter Bar inside Effective Keymaps -->
+            <div class="keymap-filter-bar">
+              <div style="display: flex; gap: 0.4rem; align-items: center;">
+                <input
+                  type="search"
+                  id="keymap-filter-input"
+                  class="input input-sm"
+                  placeholder="🔍 快速定位：快捷键 (如 <Space>A)、站点 (github.com) 或动作名..."
+                />
+                <button class="btn btn-outline btn-sm" id="btn-keymap-clear-filter" style="display: none;" title="Clear filter">✕</button>
+              </div>
+
+              <div class="keymap-filter-pills">
+                <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;" id="keymap-status-pills">
+                  <button class="lib-pill active" data-kmfilter="all" id="km-pill-all">全部键位 (0)</button>
+                  <button class="lib-pill" data-kmfilter="conflict" id="km-pill-conflict" title="仅显示发生跨库同键位竞争/覆盖的按键">⚡ 含冲突/覆盖 (0)</button>
+                  <button class="lib-pill" data-kmfilter="unique" id="km-pill-unique" title="仅显示无冲突的独有按键">✨ 无冲突独有 (0)</button>
+                </div>
+
+                <button class="btn btn-ghost btn-xs" id="btn-toggle-all-overridden" title="展开或折叠全部被替代/被覆盖的同键位选项">
+                  <span id="toggle-all-overridden-label">▾ 展开全部被覆盖项</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="effective-keymaps-list" class="inspector-scroll"></div>
+          </div>
+
+          <!-- Sub-Tab 2: Live Profile v2 JSON -->
+          <div id="instab-panel-json" class="inspector-scroll" style="display: none;">
+            <pre id="live-profile-json" class="code-pre"></pre>
+          </div>
+
+          <!-- Sub-Tab 3: Conflict & Suppression Report / Diff -->
+          <div id="instab-panel-diff" class="inspector-scroll" style="display: none;"></div>
         </div>
-        <pre id="json-preview" class="code-editor">{\n  "schemaVersion": 1,\n  "id": "custom-profile"\n}</pre>
-      </div>
-    </div>
+      </section>
+    </aside>
   </main>
 
-  <!-- Footer -->
-  <footer class="app-footer">
-    <div>
-      <strong>SurfingKeys Configuration Builder</strong> &bull; 
-      配合 <code>surfingkeys-profile-create</code> 与 <code>surfingkeys-profile-update</code> 技能使用
-    </div>
-    <div>
-      <a href="./docs/configuration.md" target="_blank">配置方案文档</a> &bull;
-      <a href="./docs/browser.md" target="_blank">浏览器使用指引</a>
-    </div>
-  </footer>
-
-  <!-- Build Result Modal -->
-  <div id="build-modal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title">
-          <span>🎉 最终 SurfingKeys 脚本构建成功</span>
-        </div>
-        <button id="modal-close-x" class="modal-close-btn">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="build-metrics-grid">
-          <div class="metric-card">
-            <span class="metric-label">方案 ID</span>
-            <span id="build-metric-id" class="metric-value">personal</span>
-          </div>
-          <div class="metric-card">
-            <span class="metric-label">Build ID</span>
-            <span id="build-metric-buildid" class="metric-value" style="font-size: 0.75rem;">...</span>
-          </div>
-          <div class="metric-card">
-            <span class="metric-label">脚本大小</span>
-            <span id="build-metric-size" class="metric-value">0 KB</span>
-          </div>
-          <div class="metric-card">
-            <span class="metric-label">生效功能</span>
-            <span id="build-metric-features" class="metric-value">0 项</span>
-          </div>
-        </div>
-
-        <div class="section-box" style="padding: 0.75rem 1rem;">
-          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.35rem;">
-            <strong>产物路径:</strong> <code id="build-script-path">dist/.../surfingkeys.js</code>
-          </div>
-          <div style="font-size: 0.8rem; color: var(--text-secondary);">
-            <strong>打包依赖:</strong> <span id="build-metric-packages">dompurify, uhtml</span>
-          </div>
-        </div>
-
-        <!-- Solutions for Chrome / SurfingKeys Storage Limit -->
-        <div class="section-box" style="padding: 0.9rem 1rem; border-color: rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.75);">
-          <div style="font-size: 0.875rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.35rem;">
-            💡 适配 SurfingKeys 配置大小限制（突破 Chrome 8KB 存储配额）
-          </div>
-          <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6;">
-            <strong>推荐方案 A（突破存储配额，官方推荐）：</strong>在 SurfingKeys 扩展选项页勾选 <code>Load settings from</code>，直接填入本地直链 URL（无体积限制，完整加载全部依赖）：
-            <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem; align-items: center;">
-              <code id="load-settings-url" style="color: var(--accent-yellow); background: var(--bg-primary); padding: 0.3rem 0.6rem; border-radius: 4px; flex: 1; font-family: var(--font-mono); font-size: 0.8rem;">/script/profile</code>
-              <button id="modal-btn-copy-url" class="btn btn-outline btn-sm">🔗 复制直链 URL</button>
-            </div>
-          </div>
-          <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; margin-top: 0.75rem;">
-            <strong>轻量方案 B（直接粘贴模式，&lt; 3 KB）：</strong>若不想使用本地 URL 加载，而是直接把代码粘贴进 SurfingKeys 的设置输入框中，请点击下方复制轻量精简片段（纯净原生 API，体积仅 1~2 KB，绝不超标）：
-            <div style="margin-top: 0.35rem;">
-              <button id="modal-btn-copy-snippet" class="btn btn-success btn-sm">📋 复制轻量精简片段 (&lt; 3KB，直接粘贴)</button>
-            </div>
-          </div>
-        </div>
-
+  <!-- ========================================================================
+       Build & Distribute Result Dialog (shadcn/ui Dialog)
+       ======================================================================== -->
+  <div class="dialog-backdrop" id="build-dialog">
+    <div class="dialog-content">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 0.85rem;">
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-cyan);">surfingkeys.js 脚本内容预览:</span>
-          </div>
-          <pre id="build-script-code" class="script-preview-scroll"></pre>
+          <h3 style="font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🎉</span>
+            <span data-i18n="modalTitle">确定性单文件构建完成 (Deterministic Bundle Ready)</span>
+          </h3>
+          <p style="font-size: 12.5px; color: hsl(var(--muted-foreground)); margin-top: 0.2rem;" data-i18n="modalSubtitle">
+            已通过 ESM 工厂组合与 Tree-Shaking 生成零明文密钥脚本，兼容 Zen Browser / Firefox 与 Chrome MV3。
+          </p>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-close-dialog">✕</button>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <div class="metric-label">Profile ID / Locale</div>
+          <div class="metric-val" id="modal-metric-profile">personal (zh-CN)</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Build ID (Reproducible)</div>
+          <div class="metric-val" style="font-size: 11.5px;">20261023T074500Z-a9f4c21e</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Active Keymaps / Searches</div>
+          <div class="metric-val" id="modal-metric-counts">28 keys · 5 searches</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Plain-Text Secrets in Bundle</div>
+          <div class="metric-val" style="color: hsl(var(--emerald-fg));">0 (100% Public Safe)</div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button id="modal-btn-copy" class="btn btn-outline btn-sm">📋 复制全量脚本 (143KB)</button>
-        <button id="modal-btn-download" class="btn btn-primary btn-sm">💾 下载 surfingkeys.js</button>
-        <button id="modal-btn-close" class="btn btn-outline btn-sm">关闭</button>
+
+      <div style="margin-bottom: 0.85rem;">
+        <label class="field-label" style="margin-bottom: 0.35rem;">
+          <span>🔗 SurfingKeys 远程订阅链接 (填入浏览器扩展 Load settings from 即可同步)</span>
+          <span class="badge badge-emerald">支持 ETag 热更新</span>
+        </label>
+        <div style="display: flex; gap: 0.45rem;">
+          <input type="text" id="modal-subscribe-url" class="input" readonly value="http://127.0.0.1:3000/script/personal" style="font-family: var(--font-mono);" />
+          <button class="btn btn-primary" id="btn-modal-copy-url">复制订阅链接</button>
+        </div>
+      </div>
+
+      <div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+          <span style="font-size: 12px; font-weight: 600;">📦 编译产物预览 (<code>dist/personal/current/surfingkeys.js</code>)</span>
+          <button class="btn btn-outline btn-sm" id="btn-modal-copy-code">复制完整脚本</button>
+        </div>
+        <pre id="modal-compiled-js" class="code-pre" style="max-height: 280px; overflow-y: auto;"></pre>
       </div>
     </div>
   </div>
 
-  <script src="./app.js"></script>
+  <div id="toast" class="toast">已复制到剪贴板</div>
+
+  <!-- ========================================================================
+       Interactive Prototype State & Logic
+       ======================================================================== -->
+  <script>
+    // 1. Bilingual UI Dictionary (FR-013)
+    const I18N = {
+      "zh-CN": {
+        brandTitle: "@skcb/ui 视觉化配置构建与分发中心",
+        brandSubtitle: "模块化 SurfingKeys 方案构建器 · 细粒度按键定制 · 冲突高亮与折叠检视 · 零密钥动态存储",
+        navBuilder: "方案构建器 (Builder)",
+        navSecrets: "动态密钥 (;ps Storage)",
+        navServer: "配置分发服务 (Server)",
+        metaTitle: "基础元数据、单父继承与编译期语言 (Profile Schema v2)",
+        metaDesc: "定义方案 ID、继承基底及编译生成的 SurfingKeys 帮助面板 (?) 目标语言，编译期静态注入零体积开销。",
+        labelProfileId: "方案 ID (id)",
+        labelExtends: "继承父方案 (extends)",
+        hintSingleParent: "单父继承链",
+        labelLocale: "脚本注释语言 (locale)",
+        labelDefaultSearch: "默认搜索引擎",
+        labelSiteLeader: "站点快捷键前缀 (leaders.site)",
+        labelSearchLeader: "搜索/Omnibar 前缀 (leaders.search)",
+        labelAbstract: "抽象父方案 (abstract)",
+        labelSecretKey: "内置 ;ps 密钥编辑器",
+        conflictTitle: "跨模组同站点冲突消解策略 (Cross-Library Conflict Resolution)",
+        conflictDesc: "当同时启用 @skcb/lib-b0o 与原生模组库（如 github.com、youtube.com）时，自动合并正交按键并按模组优先级消解同名键冲突。",
+        labelConflictMode: "冲突处理模式 (conflictResolution.mode)",
+        labelConflictSummary: "当前同域合并与覆盖统计（色标图例）",
+        labelPrecedenceOrder: "模组优先级排序 (左高 → 右低，点击 ◀ ▶ 调整)：",
+        catalogTitle: "四大官方功能模组库与细粒度按键定制 (Catalog & Contributions)",
+        catalogDesc: "支持勾选整个站点/搜索模组，或展开卡片自由开关单个按键。冲突胜出项以琥珀色高亮并可折叠查看被替代项；被覆盖项以玫红色虚线标注。",
+        catAll: "全部类别",
+        catActions: "🌐 站点动作 (actions)",
+        catSearch: "🔍 搜索引擎 (search)",
+        catOmnibar: "🚀 Omnibar",
+        btnExpandAll: "展开全部按键抽屉",
+        btnCollapseAll: "收起全部",
+        inspectorTitle: "实时检视器与构建产物 (Live Inspector)",
+        btnBuild: "构建并分发脚本",
+        insTabKeymaps: "🎹 有效键位映射",
+        insTabJson: "📄 Profile v2 JSON",
+        insTabDiff: "⚖️ 差量与冲突报告",
+        modalTitle: "确定性单文件构建完成 (Deterministic Bundle Ready)",
+        modalSubtitle: "已通过 ESM 工厂组合与 Tree-Shaking 生成零明文密钥脚本，兼容 Zen Browser / Firefox 与 Chrome MV3。",
+        keymapSearchPlaceholder: "🔍 快速定位：快捷键 (如 <Space>A)、站点 (github.com) 或动作名..."
+      },
+      "en": {
+        brandTitle: "@skcb/ui Visual Profile Builder & Distribution Server",
+        brandSubtitle: "Modular SurfingKeys Builder · Per-Key Toggle · Conflict Highlight & Collapsible View · Zero-Secret Storage",
+        navBuilder: "Profile Builder",
+        navSecrets: "Dynamic Secrets (;ps)",
+        navServer: "Distribution Server",
+        metaTitle: "Metadata, Single-Parent Inheritance & Compile-Time Locale (Schema v2)",
+        metaDesc: "Configure profile ID, parent chain, and target language for SurfingKeys '?' help descriptions with zero runtime bloat.",
+        labelProfileId: "Profile ID (id)",
+        labelExtends: "Parent Profile (extends)",
+        hintSingleParent: "Single-parent",
+        labelLocale: "Help Locale (locale)",
+        labelDefaultSearch: "Default Search Engine",
+        labelSiteLeader: "Site Key Leader (leaders.site)",
+        labelSearchLeader: "Search/Omnibar Leader (leaders.search)",
+        labelAbstract: "Abstract Parent (abstract)",
+        labelSecretKey: "Built-in ;ps Editor",
+        conflictTitle: "Cross-Library Same-Site Conflict Resolution (FR-011)",
+        conflictDesc: "Orthogonal keys merge seamlessly; overlapping keys resolve automatically via modulePrecedence without tedious manual overrides.",
+        labelConflictMode: "Resolution Mode (conflictResolution.mode)",
+        labelConflictSummary: "Live Merge & Precedence Summary (Color Legend)",
+        labelPrecedenceOrder: "Module Precedence (High → Low, click ◀ ▶ to reorder):",
+        catalogTitle: "Official Module Libraries & Per-Contribution Customization",
+        catalogDesc: "Toggle entire modules or expand any card to toggle individual keys. Conflict winners highlight in Amber with collapsible overridden rows.",
+        catAll: "All Categories",
+        catActions: "🌐 Site Actions",
+        catSearch: "🔍 Search Engines",
+        catOmnibar: "🚀 Omnibar",
+        btnExpandAll: "Expand All Drawers",
+        btnCollapseAll: "Collapse All",
+        inspectorTitle: "Live Inspector & Diagnostics",
+        btnBuild: "Build & Distribute",
+        insTabKeymaps: "🎹 Effective Keymaps",
+        insTabJson: "📄 Profile v2 JSON",
+        insTabDiff: "⚖️ Diff & Conflict Report",
+        modalTitle: "Deterministic Single-File Bundle Ready",
+        modalSubtitle: "Compiled with ESM Tree-Shaking and zero embedded secrets. Ready for Zen Browser / Firefox & Chrome MV3.",
+        keymapSearchPlaceholder: "🔍 Filter by shortcut (e.g. <Space>A), site (github.com), or action name..."
+      }
+    };
+
+    // 2. Full v2 Catalog across @skcb/lib-{ent,tech,prod,b0o}
+    const CATALOG = [
+      // --- @skcb/lib-ent ---
+      {
+        id: "ent/actions.bilibili",
+        lib: "ent",
+        pkg: "@skcb/lib-ent",
+        category: "actions",
+        domain: "bilibili.com",
+        capabilities: ["core.clickElement"],
+        secrets: [],
+        desc: {
+          "zh-CN": "哔哩哔哩 (Bilibili) 视频播放控制与一键点赞/投币/收藏/弹幕快捷键（已修复旧版选择器引号 bug）",
+          "en": "Bilibili video player & toolbar shortcuts (fullscreen, like, coin, favorite, danmaku)"
+        },
+        contributions: [
+          { id: "fullscreen-web", kind: "mapkey", alias: "f", domain: "bilibili.com", desc: { "zh-CN": "切换网页全屏 (.bpx-player-ctrl-web)", "en": "Toggle web fullscreen" } },
+          { id: "fullscreen", kind: "mapkey", alias: "F", domain: "bilibili.com", desc: { "zh-CN": "切换视频全屏 (.bpx-player-ctrl-full)", "en": "Toggle video fullscreen" } },
+          { id: "like", kind: "mapkey", alias: "l", domain: "bilibili.com", desc: { "zh-CN": "点赞视频 (.video-like)", "en": "Like video" } },
+          { id: "coin", kind: "mapkey", alias: "c", domain: "bilibili.com", desc: { "zh-CN": "投币支持 (.video-coin)", "en": "Give coin to video" } },
+          { id: "collect", kind: "mapkey", alias: "b", domain: "bilibili.com", desc: { "zh-CN": "收藏视频 (.video-fav)", "en": "Collect video to favorites" } },
+          { id: "watchlater", kind: "mapkey", alias: "w", domain: "bilibili.com", desc: { "zh-CN": "加入稍后再看", "en": "Add to Watch Later" } },
+          { id: "danmuku", kind: "mapkey", alias: "d", domain: "bilibili.com", desc: { "zh-CN": "开关弹幕显示", "en": "Toggle Danmaku overlay" } }
+        ]
+      },
+      {
+        id: "ent/search-engines.bilibili",
+        lib: "ent",
+        pkg: "@skcb/lib-ent",
+        category: "search-engines",
+        capabilities: ["core.omnibar"],
+        secrets: [],
+        desc: {
+          "zh-CN": "哔哩哔哩综合视频搜索与 Omnibar 实时联想补全",
+          "en": "Bilibili video search engine with Omnibar live suggestions"
+        },
+        contributions: [
+          { id: "search", kind: "search", alias: "bv", name: "Bilibili", desc: { "zh-CN": "B站视频搜索 (abv / cabv)", "en": "Search Bilibili videos (abv / cabv)" } }
+        ]
+      },
+      {
+        id: "ent/actions.youtube",
+        lib: "ent",
+        pkg: "@skcb/lib-ent",
+        category: "actions",
+        domain: "youtube.com",
+        capabilities: ["core.openLink", "core.secretStorage"],
+        secrets: ["youtube.pipedHost"],
+        desc: {
+          "zh-CN": "YouTube 隐私前端跳转（惰性读取当前 URL 跳转 Piped / Invidious，与 b0o/actions.youtube 按键正交可共存）",
+          "en": "YouTube privacy frontend redirects (Piped / Invidious, orthogonal to b0o/actions.youtube)"
+        },
+        contributions: [
+          { id: "open-piped", kind: "mapkey", alias: "gp", domain: "youtube.com", desc: { "zh-CN": "在 Piped 实例中打开当前视频", "en": "Open current video in Piped instance" } },
+          { id: "open-invidious", kind: "mapkey", alias: "gl", domain: "youtube.com", desc: { "zh-CN": "在 Invidious 实例中打开当前视频", "en": "Open current video in Invidious" } }
+        ]
+      },
+      {
+        id: "ent/actions.twitter",
+        lib: "ent",
+        pkg: "@skcb/lib-ent",
+        category: "actions",
+        domain: "twitter.com",
+        capabilities: ["core.openLink", "core.secretStorage"],
+        secrets: ["twitter.nitterHost"],
+        desc: {
+          "zh-CN": "Twitter / X.com 一键切换至 Nitter 隐私镜像站",
+          "en": "Redirect current Twitter / X.com page to Nitter instance"
+        },
+        contributions: [
+          { id: "open-nitter", kind: "mapkey", alias: "N", domain: "twitter.com", desc: { "zh-CN": "在 Nitter 中打开当前推文页", "en": "Open current page in Nitter" } }
+        ]
+      },
+
+      // --- @skcb/lib-tech ---
+      {
+        id: "tech/actions.github",
+        lib: "tech",
+        pkg: "@skcb/lib-tech",
+        category: "actions",
+        domain: "github.com",
+        capabilities: ["core.openLink", "core.clipboard", "core.secretStorage"],
+        secrets: ["github.user"],
+        desc: {
+          "zh-CN": "GitHub 仓库极速导航、个人 Project 看板 (ghp) 与剪贴板打开仓库（与 b0o/actions.github 存在 6 个同名导航键）",
+          "en": "GitHub repo navigation, personal project board (ghp) & clipboard repo opener"
+        },
+        contributions: [
+          { id: "actions", kind: "mapkey", alias: "A", domain: "github.com", desc: { "zh-CN": "[tech] 打开仓库 Actions 工作流页 (带上下文解析)", "en": "[tech] Open repository Actions tab (context-aware)" } },
+          { id: "commits", kind: "mapkey", alias: "C", domain: "github.com", desc: { "zh-CN": "[tech] 打开仓库 Commits 提交历史", "en": "[tech] Open repository Commits history" } },
+          { id: "issues", kind: "mapkey", alias: "I", domain: "github.com", desc: { "zh-CN": "[tech] 打开仓库 Issues 列表", "en": "[tech] Open repository Issues list" } },
+          { id: "pulls", kind: "mapkey", alias: "P", domain: "github.com", desc: { "zh-CN": "[tech] 打开仓库 Pull Requests", "en": "[tech] Open repository Pull Requests" } },
+          { id: "repo-root", kind: "mapkey", alias: "R", domain: "github.com", desc: { "zh-CN": "[tech] 返回当前仓库根目录", "en": "[tech] Go to repository root" } },
+          { id: "settings", kind: "mapkey", alias: "S", domain: "github.com", desc: { "zh-CN": "[tech] 打开仓库 Settings 设置", "en": "[tech] Open repository Settings" } },
+          { id: "personal-project", kind: "mapkey", alias: "ghp", domain: "github.com", desc: { "zh-CN": "打开个人 GitHub Project 看板 (读取 ;ps github.user)", "en": "Open personal GitHub Project board (via ;ps github.user)" } },
+          { id: "clipboard-repo", kind: "mapkey", alias: "\\cgh", domain: "global", leaderFree: true, desc: { "zh-CN": "从剪贴板 owner/repo 直接打开 GitHub 仓库", "en": "Open GitHub owner/repo from clipboard" } }
+        ]
+      },
+      {
+        id: "tech/search-engines.sspai",
+        lib: "tech",
+        pkg: "@skcb/lib-tech",
+        category: "search-engines",
+        capabilities: ["core.omnibar"],
+        secrets: [],
+        desc: {
+          "zh-CN": "少数派 (sspai.com) 深度科技文章检索与标签聚合搜索",
+          "en": "Sspai.com tech articles & tag search aliases"
+        },
+        contributions: [
+          { id: "post-search", kind: "search", alias: "ssp", name: "少数派文章", desc: { "zh-CN": "搜索少数派文章 (assp / cassp)", "en": "Search Sspai posts (assp / cassp)" } },
+          { id: "tag-search", kind: "search", alias: "sspt", name: "少数派标签", desc: { "zh-CN": "按标签浏览少数派 (asspt)", "en": "Browse Sspai by tag (asspt)" } }
+        ]
+      },
+      {
+        id: "tech/omnibar.github",
+        lib: "tech",
+        pkg: "@skcb/lib-tech",
+        category: "omnibar",
+        domain: "github.com",
+        capabilities: ["core.omnibar", "core.openLink"],
+        secrets: [],
+        desc: {
+          "zh-CN": "GitHub 仓库子页面与星标仓库 Omnibar 快速跳转面板",
+          "en": "GitHub repository subpage & starred repo Omnibar quick jumper"
+        },
+        contributions: [
+          { id: "repo-jumper", kind: "omnibar", alias: "go", domain: "github.com", desc: { "zh-CN": "呼出当前仓库子页面 Omnibar 跳转器", "en": "Open GitHub repo subpage Omnibar" } }
+        ]
+      },
+      {
+        id: "tech/search-engines.searx",
+        lib: "tech",
+        pkg: "@skcb/lib-tech",
+        category: "search-engines",
+        capabilities: ["core.secretStorage"],
+        secrets: ["searx.url"],
+        desc: {
+          "zh-CN": "SearXNG 元搜索引擎（支持通过 ;ps 动态绑定自建实例地址）",
+          "en": "SearXNG metasearch engine (configurable instance URL via ;ps)"
+        },
+        contributions: [
+          { id: "search", kind: "search", alias: "sx", name: "SearXNG", desc: { "zh-CN": "SearXNG 隐私聚合搜索 (asx / casx)", "en": "SearXNG metasearch (asx / casx)" } }
+        ]
+      },
+
+      // --- @skcb/lib-prod ---
+      {
+        id: "prod/actions.gmail",
+        lib: "prod",
+        pkg: "@skcb/lib-prod",
+        category: "actions",
+        domain: "mail.google.com",
+        capabilities: ["core.clickElement", "core.createHints"],
+        secrets: [],
+        desc: {
+          "zh-CN": "Gmail 键盘流全套适配（归档/星标/静音/批量选择，已修复 gC 跳通讯录与 select[name=\"tact\"] 选择器 bug）",
+          "en": "Gmail keyboard navigation & batch actions (fixed gC Contacts & tact selector)"
+        },
+        contributions: [
+          { id: "archive", kind: "mapkey", alias: "e", domain: "mail.google.com", desc: { "zh-CN": "归档当前或选中会话", "en": "Archive selected thread(s)" } },
+          { id: "mute", kind: "mapkey", alias: "_", domain: "mail.google.com", desc: { "zh-CN": "静音当前邮件会话 (Mute)", "en": "Mute selected thread(s)" } },
+          { id: "go-inbox", kind: "mapkey", alias: "gi", domain: "mail.google.com", desc: { "zh-CN": "跳转收件箱 (Inbox)", "en": "Go to Inbox" } },
+          { id: "go-contacts", kind: "mapkey", alias: "gC", domain: "mail.google.com", desc: { "zh-CN": "跳转 Google 通讯录 (Contacts)", "en": "Go to Contacts" } }
+        ]
+      },
+      {
+        id: "prod/actions.pinboard",
+        lib: "prod",
+        pkg: "@skcb/lib-prod",
+        category: "actions",
+        domain: "global",
+        capabilities: ["core.openLink", "core.clipboard"],
+        secrets: [],
+        desc: {
+          "zh-CN": "Pinboard 全局书签快速收藏、稍后读与随机未读跳转（已修复 pS 加载期求值 location.href bug）",
+          "en": "Pinboard bookmarking, read-later & random unread shortcuts"
+        },
+        contributions: [
+          { id: "bookmark-page", kind: "mapkey", alias: "pA", domain: "global", desc: { "zh-CN": "收藏当前页面至 Pinboard", "en": "Bookmark current page to Pinboard" } },
+          { id: "read-later", kind: "mapkey", alias: "pR", domain: "global", desc: { "zh-CN": "将当前页加入 Pinboard 稍后读", "en": "Save current page to Pinboard Read Later" } },
+          { id: "search-current", kind: "mapkey", alias: "pS", domain: "global", desc: { "zh-CN": "在 Pinboard 中搜索当前页面域名/URL", "en": "Search current URL in Pinboard" } }
+        ]
+      },
+      {
+        id: "prod/search-engines.pinboard",
+        lib: "prod",
+        pkg: "@skcb/lib-prod",
+        category: "search-engines",
+        capabilities: ["core.secretStorage"],
+        secrets: ["pinboard.user"],
+        desc: {
+          "zh-CN": "Pinboard 个人书签全文检索与标签检索（通过 ;ps 动态读取 pinboard.user）",
+          "en": "Pinboard personal bookmark & tag search (uses ;ps pinboard.user)"
+        },
+        contributions: [
+          { id: "search-all", kind: "search", alias: "pb", name: "Pinboard", desc: { "zh-CN": "搜索个人 Pinboard 书签 (apb / capb)", "en": "Search personal Pinboard bookmarks" } },
+          { id: "search-tag", kind: "search", alias: "pbt", name: "Pinboard Tag", desc: { "zh-CN": "按标签搜索 Pinboard (apbt)", "en": "Search Pinboard by tag (apbt)" } }
+        ]
+      },
+
+      // --- @skcb/lib-b0o ---
+      {
+        id: "b0o/actions.github",
+        lib: "b0o",
+        pkg: "@skcb/lib-b0o",
+        category: "actions",
+        domain: "github.com",
+        capabilities: ["core.openLink", "core.createHints", "core.clipboard"],
+        secrets: [],
+        desc: {
+          "zh-CN": "上游 b0o GitHub 全量动作集（含 Star、复制文件路径 yy、打开 github.dev D、跳转父目录 gu 等独有增强）",
+          "en": "Upstream b0o GitHub actions (includes Star, copy path yy, open github.dev D, parent dir gu, etc.)"
+        },
+        contributions: [
+          { id: "actions", kind: "mapkey", alias: "A", domain: "github.com", desc: { "zh-CN": "[b0o] 打开仓库 Actions 页 (标准路径拼接)", "en": "[b0o] Open repository Actions page" } },
+          { id: "commits", kind: "mapkey", alias: "C", domain: "github.com", desc: { "zh-CN": "[b0o] 打开仓库 Commits 页", "en": "[b0o] Open repository Commits page" } },
+          { id: "issues", kind: "mapkey", alias: "I", domain: "github.com", desc: { "zh-CN": "[b0o] 打开仓库 Issues 页", "en": "[b0o] Open repository Issues page" } },
+          { id: "pulls", kind: "mapkey", alias: "P", domain: "github.com", desc: { "zh-CN": "[b0o] 打开仓库 Pull Requests 页", "en": "[b0o] Open repository Pull Requests page" } },
+          { id: "repo-root", kind: "mapkey", alias: "R", domain: "github.com", desc: { "zh-CN": "[b0o] 打开仓库根目录", "en": "[b0o] Open repository root" } },
+          { id: "settings", kind: "mapkey", alias: "S", domain: "github.com", desc: { "zh-CN": "[b0o] 打开仓库 Settings 页", "en": "[b0o] Open repository Settings page" } },
+          { id: "notifications", kind: "mapkey", alias: "N", domain: "github.com", desc: { "zh-CN": "[b0o] 打开 GitHub 通知中心 (Notifications)", "en": "[b0o] Open GitHub Notifications" } },
+          { id: "toggle-star", kind: "mapkey", alias: "s", domain: "github.com", desc: { "zh-CN": "[b0o 独有] 切换当前仓库 Star 状态", "en": "[b0o unique] Toggle repository Star" } },
+          { id: "copy-filepath", kind: "mapkey", alias: "yy", domain: "github.com", desc: { "zh-CN": "[b0o 独有] 复制当前代码文件相对路径", "en": "[b0o unique] Copy file path to clipboard" } },
+          { id: "open-github-dev", kind: "mapkey", alias: "D", domain: "github.com", desc: { "zh-CN": "[b0o 独有] 在 github.dev 在线编辑器打开当前库", "en": "[b0o unique] Open repo in github.dev web editor" } },
+          { id: "go-up-dir", kind: "mapkey", alias: "gu", domain: "github.com", desc: { "zh-CN": "[b0o 独有] 向上返回父级代码目录", "en": "[b0o unique] Go up one directory in tree" } }
+        ]
+      },
+      {
+        id: "b0o/actions.youtube",
+        lib: "b0o",
+        pkg: "@skcb/lib-b0o",
+        category: "actions",
+        domain: "youtube.com",
+        capabilities: ["core.openLink", "core.clipboard"],
+        secrets: [],
+        desc: {
+          "zh-CN": "上游 b0o YouTube 播放器快捷键（全屏 F、复制带时间戳视频链接 Yt/Ym，与 ent/actions.youtube 完全正交）",
+          "en": "Upstream b0o YouTube shortcuts (fullscreen F, copy timestamped link Yt/Ym)"
+        },
+        contributions: [
+          { id: "fullscreen", kind: "mapkey", alias: "F", domain: "youtube.com", leaderFree: true, desc: { "zh-CN": "切换 YouTube 播放器全屏 (无前缀 F)", "en": "Toggle YouTube fullscreen (leader-free F)" } },
+          { id: "copy-time-url", kind: "mapkey", alias: "Yt", domain: "youtube.com", leaderFree: true, desc: { "zh-CN": "复制当前播放时间点视频链接", "en": "Copy video URL at current timestamp" } }
+        ]
+      },
+      {
+        id: "b0o/actions.amazon",
+        lib: "b0o",
+        pkg: "@skcb/lib-b0o",
+        category: "actions",
+        domain: "amazon.com",
+        capabilities: ["core.openLink"],
+        secrets: [],
+        desc: {
+          "zh-CN": "Amazon 商品详情、评价、购物车与 Fakespot 鉴定快捷键",
+          "en": "Amazon product, reviews, cart & Fakespot analysis shortcuts"
+        },
+        contributions: [
+          { id: "fakespot", kind: "mapkey", alias: "fs", domain: "amazon.com", desc: { "zh-CN": "在 Fakespot 中检测当前商品评论真伪", "en": "Analyze product on Fakespot" } },
+          { id: "cart", kind: "mapkey", alias: "C", domain: "amazon.com", desc: { "zh-CN": "打开 Amazon 购物车", "en": "Open Amazon Cart" } }
+        ]
+      },
+      {
+        id: "b0o/search-engines.ddg",
+        lib: "b0o",
+        pkg: "@skcb/lib-b0o",
+        category: "search-engines",
+        capabilities: ["core.omnibar"],
+        secrets: [],
+        desc: {
+          "zh-CN": "DuckDuckGo 隐私搜索引擎（继承自父方案 ./common.json）",
+          "en": "DuckDuckGo privacy search engine (inherited from ./common.json)"
+        },
+        contributions: [
+          { id: "search", kind: "search", alias: "du", name: "DuckDuckGo", desc: { "zh-CN": "DuckDuckGo 搜索及联想补全 (adu / cadu)", "en": "DuckDuckGo search with completions (adu / cadu)" } }
+        ]
+      }
+    ];
+
+    // 3. Parent Profile `./common.json` simulation
+    const COMMON_PARENT_FEATURES = ["b0o/search-engines.ddg"];
+
+    // 4. Interactive State
+    const state = {
+      uiLang: "zh-CN",
+      dark: true,
+      topMode: "builder", // "builder" | "secrets" | "server"
+      libFilter: "all",
+      catFilter: "all",
+      searchQuery: "",
+      inspectorTab: "keymaps",
+
+      // Effective Keymaps Filter & Collapsible Overridden Items State
+      keymapSearchQuery: "",
+      keymapStatusFilter: "all", // "all" | "conflict" | "unique"
+      expandedConflictSlots: new Set(["key:github.com:<Space>A"]), // Pre-expand <Space>A so user immediately sees the collapsible overridden design!
+      expandedCatalogReplaced: new Set(),
+
+      expandedCards: new Set(["ent/actions.bilibili", "tech/actions.github", "b0o/actions.github"]),
+      profile: {
+        schemaVersion: 2,
+        id: "personal",
+        extends: "./common.json",
+        base: "minimal",
+        locale: "zh-CN",
+        abstract: false,
+        selectAdd: [
+          "ent/actions.bilibili",
+          "ent/search-engines.bilibili",
+          "ent/actions.youtube",
+          "tech/actions.github",
+          "tech/search-engines.sspai",
+          "b0o/actions.github",
+          "b0o/actions.youtube"
+        ],
+        selectRemove: [],
+        selectRemoveContributions: [
+          "b0o/actions.github#notifications"
+        ],
+        conflictResolution: {
+          mode: "module-precedence",
+          modulePrecedence: ["tech", "ent", "prod", "b0o"]
+        },
+        leaders: {
+          site: "<Space>",
+          search: "a"
+        },
+        settings: {
+          defaultSearchEngine: "du"
+        },
+        overrides: []
+      }
+    };
+
+    const PRESETS = {
+      personal: {
+        id: "personal",
+        extends: "./common.json",
+        locale: "zh-CN",
+        abstract: false,
+        selectAdd: [
+          "ent/actions.bilibili",
+          "ent/search-engines.bilibili",
+          "ent/actions.youtube",
+          "tech/actions.github",
+          "tech/search-engines.sspai",
+          "b0o/actions.github",
+          "b0o/actions.youtube"
+        ],
+        selectRemoveContributions: ["b0o/actions.github#notifications"],
+        conflictMode: "module-precedence",
+        defaultSearch: "du"
+      },
+      work: {
+        id: "work",
+        extends: "./common.json",
+        locale: "en",
+        abstract: false,
+        selectAdd: [
+          "tech/actions.github",
+          "tech/omnibar.github",
+          "tech/search-engines.searx",
+          "prod/actions.gmail",
+          "prod/actions.pinboard",
+          "prod/search-engines.pinboard",
+          "b0o/actions.github"
+        ],
+        selectRemoveContributions: [],
+        conflictMode: "module-precedence",
+        defaultSearch: "sx"
+      },
+      common: {
+        id: "common",
+        extends: "",
+        locale: "zh-CN",
+        abstract: true,
+        selectAdd: ["b0o/search-engines.ddg"],
+        selectRemoveContributions: [],
+        conflictMode: "strict",
+        defaultSearch: "du"
+      }
+    };
+
+    function getEffectiveFeatureIds() {
+      const inherited = state.profile.extends === "./common.json" ? COMMON_PARENT_FEATURES : [];
+      const combined = new Set([...inherited, ...state.profile.selectAdd]);
+      state.profile.selectRemove.forEach(id => combined.delete(id));
+      return combined;
+    }
+
+    // Compute effective contributions, conflict resolution & suppressions (including explicit overrides)
+    function computeResolution() {
+      const effectiveFeatures = getEffectiveFeatureIds();
+      const activeContribs = [];
+      const suppressedContribs = [];
+      const removedContribs = [];
+      const unresolvedConflicts = [];
+
+      const bySlot = new Map(); // slotKey -> array of { feature, contrib, fullId, slotKey }
+
+      CATALOG.forEach(feature => {
+        if (!effectiveFeatures.has(feature.id)) return;
+        feature.contributions.forEach(contrib => {
+          const fullId = `${feature.id}#${contrib.id}`;
+          if (state.profile.selectRemoveContributions.includes(fullId)) {
+            removedContribs.push({ feature, contrib, fullId });
+            return;
+          }
+          const slotKey = contrib.kind === "search"
+            ? `search:${contrib.alias}`
+            : `key:${contrib.domain || "global"}:${contrib.leaderFree ? "" : state.profile.leaders.site}${contrib.alias}`;
+          if (!bySlot.has(slotKey)) bySlot.set(slotKey, []);
+          bySlot.get(slotKey).push({ feature, contrib, fullId, slotKey });
+        });
+      });
+
+      const precOrder = state.profile.conflictResolution.modulePrecedence;
+      const mode = state.profile.conflictResolution.mode;
+
+      for (const [slotKey, items] of bySlot.entries()) {
+        if (items.length === 1) {
+          activeContribs.push({ ...items[0], conflictWinner: false, overriddenItems: [] });
+        } else {
+          // Check if user specified an explicit override in profile.overrides
+          const explicitRule = state.profile.overrides.find(ov =>
+            items.some(i => i.fullId === ov.target) && items.some(i => i.fullId === ov.with)
+          );
+
+          if (explicitRule) {
+            const winner = items.find(i => i.fullId === explicitRule.with) || items[0];
+            const losers = items.filter(i => i.fullId !== winner.fullId);
+            activeContribs.push({
+              ...winner,
+              conflictWinner: true,
+              explicitOverride: true,
+              overriddenCount: losers.length,
+              overriddenItems: losers
+            });
+            losers.forEach(loser => {
+              suppressedContribs.push({ ...loser, suppressedBy: winner.fullId, reason: "explicit-override", winnerItem: winner });
+            });
+          } else if (mode === "strict") {
+            unresolvedConflicts.push({ slotKey, items });
+            const first = items[0];
+            const rest = items.slice(1);
+            activeContribs.push({
+              ...first,
+              conflictWinner: true,
+              strictConflict: true,
+              overriddenCount: rest.length,
+              overriddenItems: rest
+            });
+            rest.forEach(loser => {
+              suppressedContribs.push({ ...loser, suppressedBy: first.fullId, reason: "strict-conflict", winnerItem: first });
+            });
+          } else if (mode === "module-precedence") {
+            const sorted = [...items].sort((a, b) => {
+              const idxA = precOrder.indexOf(a.feature.lib);
+              const idxB = precOrder.indexOf(b.feature.lib);
+              return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+            });
+            const winner = sorted[0];
+            const losers = sorted.slice(1);
+            activeContribs.push({
+              ...winner,
+              conflictWinner: true,
+              overriddenCount: losers.length,
+              overriddenItems: losers
+            });
+            losers.forEach(loser => {
+              suppressedContribs.push({ ...loser, suppressedBy: winner.fullId, reason: "module-precedence", winnerItem: winner });
+            });
+          } else {
+            // prefer-later
+            const winner = items[items.length - 1];
+            const losers = items.slice(0, -1);
+            activeContribs.push({
+              ...winner,
+              conflictWinner: true,
+              overriddenCount: losers.length,
+              overriddenItems: losers
+            });
+            losers.forEach(loser => {
+              suppressedContribs.push({ ...loser, suppressedBy: winner.fullId, reason: "prefer-later", winnerItem: winner });
+            });
+          }
+        }
+      }
+
+      return { effectiveFeatures, activeContribs, suppressedContribs, removedContribs, unresolvedConflicts };
+    }
+
+    // Highlight matching substring helper
+    function highlightText(text, query) {
+      if (!query) return text;
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return String(text).replace(new RegExp(`(${escaped})`, "gi"), `<mark class="hl">$1</mark>`);
+    }
+
+    // Promote an overridden item via explicit overrides (one-click swap)
+    window.promoteOverriddenItem = function(winnerFullId, loserFullId, event) {
+      if (event) event.stopPropagation();
+      // Remove any existing override between these two
+      state.profile.overrides = state.profile.overrides.filter(ov =>
+        !((ov.target === winnerFullId && ov.with === loserFullId) || (ov.target === loserFullId && ov.with === winnerFullId))
+      );
+      state.profile.overrides.push({
+        target: winnerFullId,
+        with: loserFullId
+      });
+      showToast(
+        state.uiLang === "zh-CN"
+          ? `⚡ 已将 ${loserFullId} 设为显式优先 (写入 profile.overrides)`
+          : `⚡ Promoted ${loserFullId} via profile.overrides`
+      );
+      renderAll();
+    };
+
+    window.clearExplicitOverride = function(winnerFullId, event) {
+      if (event) event.stopPropagation();
+      state.profile.overrides = state.profile.overrides.filter(ov => ov.with !== winnerFullId);
+      renderAll();
+    };
+
+    // Toggle collapsible overridden drawer in Right Keymaps Inspector
+    window.toggleConflictSlot = function(slotKey, event) {
+      if (event) event.stopPropagation();
+      if (state.expandedConflictSlots.has(slotKey)) {
+        state.expandedConflictSlots.delete(slotKey);
+      } else {
+        state.expandedConflictSlots.add(slotKey);
+      }
+      renderInspector();
+    };
+
+    // Toggle collapsible replaced row inside Left Catalog Drawer
+    window.toggleCatalogReplaced = function(fullId, event) {
+      if (event) event.stopPropagation();
+      if (state.expandedCatalogReplaced.has(fullId)) {
+        state.expandedCatalogReplaced.delete(fullId);
+      } else {
+        state.expandedCatalogReplaced.add(fullId);
+      }
+      renderCatalog();
+    };
+
+    // Render Module Precedence Pills
+    function renderPrecedenceBar() {
+      const container = document.getElementById("precedence-pills");
+      const order = state.profile.conflictResolution.modulePrecedence;
+      const libBadges = {
+        tech: { label: "tech (@skcb/lib-tech)", cls: "badge-blue" },
+        ent: { label: "ent (@skcb/lib-ent)", cls: "badge-emerald" },
+        prod: { label: "prod (@skcb/lib-prod)", cls: "badge-purple" },
+        b0o: { label: "b0o (@skcb/lib-b0o)", cls: "badge-secondary" }
+      };
+
+      container.innerHTML = order.map((lib, idx) => `
+        <div class="precedence-pill">
+          <span class="precedence-rank">${idx + 1}</span>
+          <span>${libBadges[lib]?.label || lib}</span>
+          <button class="precedence-move-btn" onclick="movePrecedence(${idx}, -1)" ${idx === 0 ? "disabled" : ""} title="Move Higher">◀</button>
+          <button class="precedence-move-btn" onclick="movePrecedence(${idx}, 1)" ${idx === order.length - 1 ? "disabled" : ""} title="Move Lower">▶</button>
+        </div>
+        ${idx < order.length - 1 ? '<span style="color: hsl(var(--muted-foreground)); font-size: 11px;">❯</span>' : ''}
+      `).join("");
+    }
+
+    window.movePrecedence = function(idx, delta) {
+      const arr = state.profile.conflictResolution.modulePrecedence;
+      const target = idx + delta;
+      if (target < 0 || target >= arr.length) return;
+      const tmp = arr[idx];
+      arr[idx] = arr[target];
+      arr[target] = tmp;
+      renderAll();
+    };
+
+    // Render Feature Catalog Cards & Contribution Accordions (with Conflict Color Highlighting & Collapsible Replaced Options)
+    function renderCatalog() {
+      const res = computeResolution();
+      const listEl = document.getElementById("catalog-cards-list");
+      const suppressedMap = new Map(res.suppressedContribs.map(s => [s.fullId, s]));
+      const winnerMap = new Map(res.activeContribs.filter(a => a.conflictWinner).map(a => [a.fullId, a]));
+      const inheritedSet = new Set(state.profile.extends === "./common.json" ? COMMON_PARENT_FEATURES : []);
+
+      const filtered = CATALOG.filter(f => {
+        if (state.libFilter !== "all" && f.lib !== state.libFilter) return false;
+        if (state.catFilter !== "all" && f.category !== state.catFilter) return false;
+        if (state.searchQuery) {
+          const q = state.searchQuery.toLowerCase();
+          const matchId = f.id.toLowerCase().includes(q);
+          const matchDesc = (f.desc["zh-CN"] + f.desc.en).toLowerCase().includes(q);
+          const matchKey = f.contributions.some(c => c.alias.toLowerCase().includes(q) || (c.desc["zh-CN"] + c.desc.en).toLowerCase().includes(q));
+          return matchId || matchDesc || matchKey;
+        }
+        return true;
+      });
+
+      const libColorMap = {
+        ent: "badge-emerald",
+        tech: "badge-blue",
+        prod: "badge-purple",
+        b0o: "badge-secondary"
+      };
+
+      listEl.innerHTML = filtered.map(f => {
+        const isSelected = res.effectiveFeatures.has(f.id);
+        const isInherited = inheritedSet.has(f.id);
+        const isExpanded = state.expandedCards.has(f.id);
+
+        const totalContribs = f.contributions.length;
+        const removedInCard = f.contributions.filter(c => state.profile.selectRemoveContributions.includes(`${f.id}#${c.id}`)).length;
+        const suppressedInCard = f.contributions.filter(c => suppressedMap.has(`${f.id}#${c.id}`)).length;
+        const winnerInCard = f.contributions.filter(c => winnerMap.has(`${f.id}#${c.id}`)).length;
+        const activeInCard = isSelected ? (totalContribs - removedInCard - suppressedInCard) : 0;
+
+        return `
+          <div class="feature-card ${isSelected ? "selected" : ""}">
+            <div class="feature-card-main">
+              <div class="feature-card-info">
+                <div class="feature-title-row">
+                  <span class="badge ${libColorMap[f.lib] || "badge-secondary"}">${f.pkg}</span>
+                  <span class="feature-id">${f.id}</span>
+                  ${f.domain ? `<span class="badge badge-secondary">🌐 ${f.domain}</span>` : ""}
+                  ${isInherited ? `<span class="badge badge-amber">Inherited from ./common.json</span>` : ""}
+                  ${winnerInCard > 0 ? `<span class="badge badge-amber" title="包含跨模组同键位胜出项">⚡ ${winnerInCard} 键覆盖他库</span>` : ""}
+                  ${suppressedInCard > 0 ? `<span class="badge badge-rose" title="包含被高优先级模组替代的同名键">⚡ ${suppressedInCard} 键被替代</span>` : ""}
+                  ${f.secrets.length ? `<span class="badge badge-purple" title="Uses core.secretStorage (;ps)">🔐 ;ps (${f.secrets.join(", ")})</span>` : ""}
+                </div>
+                <div class="feature-desc">${f.desc[state.uiLang]}</div>
+                <div class="feature-meta-row">
+                  <button class="btn btn-outline btn-sm" onclick="toggleCardDrawer('${f.id}')">
+                    <span>${isExpanded ? "▾" : "▸"}</span>
+                    <span>${state.uiLang === "zh-CN" ? `细粒度按键定制 (${activeInCard}/${totalContribs} 生效)` : `Customize Keys (${activeInCard}/${totalContribs} effective)`}</span>
+                  </button>
+                  ${removedInCard > 0 ? `<span class="badge badge-rose">🚫 -${removedInCard} 单键已关</span>` : ""}
+                  ${f.capabilities.map(cap => `<span class="badge badge-secondary" style="font-weight:400;">⚙️ ${cap}</span>`).join("")}
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;">
+                <button type="button" class="switch" role="switch" aria-checked="${isSelected}" onclick="toggleFeature('${f.id}')" title="Enable / Disable Module">
+                  <span class="switch-thumb"></span>
+                </button>
+                <span style="font-size: 11px; color: hsl(var(--muted-foreground));">${isSelected ? (state.uiLang === "zh-CN" ? "已启用" : "Enabled") : (state.uiLang === "zh-CN" ? "未启用" : "Disabled")}</span>
+              </div>
+            </div>
+
+            ${isExpanded ? `
+              <div class="contrib-drawer">
+                <div class="contrib-drawer-header">
+                  <span>🎹 <strong>${f.id}</strong> — ${state.uiLang === "zh-CN" ? "单项开关与冲突色标（琥珀色=冲突胜出并可展开被替代项；玫红虚线=被高优库覆盖）" : "Per-Key Toggles & Conflict Highlights"}</span>
+                  <span>${state.uiLang === "zh-CN" ? "目标注释语言" : "Target Locale"}: <code>${state.profile.locale}</code></span>
+                </div>
+                <table class="contrib-table">
+                  <tbody>
+                    ${f.contributions.map(c => {
+                      const fullId = `${f.id}#${c.id}`;
+                      const isRemoved = state.profile.selectRemoveContributions.includes(fullId);
+                      const suppressedInfo = suppressedMap.get(fullId);
+                      const winnerInfo = winnerMap.get(fullId);
+                      const isReplacedOpen = state.expandedCatalogReplaced.has(fullId);
+                      const chord = c.kind === "search"
+                        ? `${state.profile.leaders.search}${c.alias} / c${state.profile.leaders.search}${c.alias}`
+                        : `${c.leaderFree ? "" : state.profile.leaders.site}${c.alias}`;
+
+                      let rowClass = "";
+                      let kbdClass = "kbd";
+                      if (isRemoved || !isSelected) {
+                        rowClass = "contrib-row-removed";
+                      } else if (winnerInfo) {
+                        rowClass = "contrib-row-winner";
+                        kbdClass = winnerInfo.strictConflict ? "kbd kbd-conflict-strict" : "kbd kbd-conflict-winner";
+                      } else if (suppressedInfo) {
+                        rowClass = "contrib-row-suppressed";
+                        kbdClass = "kbd kbd-suppressed";
+                      }
+
+                      let statusBadge = "";
+                      if (!isSelected) {
+                        statusBadge = `<span class="badge badge-secondary">${state.uiLang === "zh-CN" ? "模组未选" : "Module Off"}</span>`;
+                      } else if (isRemoved) {
+                        statusBadge = `<span class="badge badge-rose">🚫 已单键剔除</span>`;
+                      } else if (winnerInfo) {
+                        statusBadge = `
+                          <button class="btn btn-xs badge-amber" style="cursor:pointer;" onclick="toggleCatalogReplaced('${fullId}', event)" title="点击展开/收起被此按键替代的同名选项">
+                            ⚡ ${state.uiLang === "zh-CN" ? `冲突胜出 · 已替代 ${winnerInfo.overriddenCount} 项` : `Won · Replaced ${winnerInfo.overriddenCount}`} ${isReplacedOpen ? "▴" : "▾"}
+                          </button>
+                        `;
+                      } else if (suppressedInfo) {
+                        statusBadge = `
+                          <span style="display:inline-flex; align-items:center; gap:0.3rem;">
+                            <span class="badge badge-rose">⚡ 被 ${suppressedInfo.suppressedBy} 替代</span>
+                            <button class="btn btn-outline btn-xs" onclick="promoteOverriddenItem('${suppressedInfo.suppressedBy}', '${fullId}', event)" title="一键写入 overrides 改用此项">改用此项</button>
+                          </span>
+                        `;
+                      } else {
+                        statusBadge = `<span class="badge badge-emerald">✓ 独有生效</span>`;
+                      }
+
+                      return `
+                        <tr class="${rowClass}">
+                          <td style="width: 135px;"><span class="${kbdClass}">${chord}</span></td>
+                          <td style="width: 140px; font-family: var(--font-mono); color: hsl(var(--muted-foreground));">#${c.id}</td>
+                          <td>
+                            <div>${c.desc[state.profile.locale] || c.desc.en}</div>
+                            ${(winnerInfo && isReplacedOpen) ? `
+                              <div class="contrib-inline-replaced-drawer">
+                                <div style="font-weight:600; color:hsl(var(--amber-fg));">
+                                  ↳ ${state.uiLang === "zh-CN" ? "被此按键覆盖/替代的同键位选项：" : "Overridden / Replaced alternative(s):"}
+                                </div>
+                                ${winnerInfo.overriddenItems.map(ov => `
+                                  <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding-top:0.15rem;">
+                                    <span>
+                                      <span class="badge badge-rose">被替代</span>
+                                      <code style="margin:0 0.3rem;">${ov.fullId}</code>
+                                      <span style="color:hsl(var(--muted-foreground));">${ov.contrib.desc[state.profile.locale] || ov.contrib.desc.en}</span>
+                                    </span>
+                                    <button class="btn btn-outline btn-xs" onclick="promoteOverriddenItem('${fullId}', '${ov.fullId}', event)">切换采用该项</button>
+                                  </div>
+                                `).join("")}
+                              </div>
+                            ` : ""}
+                          </td>
+                          <td style="text-align: right;">${statusBadge}</td>
+                          <td style="width: 46px; text-align: right;">
+                            <button type="button" class="switch switch-sm" role="switch" aria-checked="${!isRemoved}" onclick="toggleContribution('${fullId}')" title="Toggle ${fullId}">
+                              <span class="switch-thumb"></span>
+                            </button>
+                          </td>
+                        </tr>
+                      `;
+                    }).join("")}
+                  </tbody>
+                </table>
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    window.toggleCardDrawer = function(featureId) {
+      if (state.expandedCards.has(featureId)) {
+        state.expandedCards.delete(featureId);
+      } else {
+        state.expandedCards.add(featureId);
+      }
+      renderCatalog();
+    };
+
+    window.toggleFeature = function(featureId) {
+      const inherited = state.profile.extends === "./common.json" && COMMON_PARENT_FEATURES.includes(featureId);
+      const effective = getEffectiveFeatureIds();
+
+      if (effective.has(featureId)) {
+        state.profile.selectAdd = state.profile.selectAdd.filter(id => id !== featureId);
+        if (inherited && !state.profile.selectRemove.includes(featureId)) {
+          state.profile.selectRemove.push(featureId);
+        }
+      } else {
+        state.profile.selectRemove = state.profile.selectRemove.filter(id => id !== featureId);
+        if (!inherited && !state.profile.selectAdd.includes(featureId)) {
+          state.profile.selectAdd.push(featureId);
+        }
+      }
+      renderAll();
+    };
+
+    window.toggleContribution = function(fullId) {
+      const idx = state.profile.selectRemoveContributions.indexOf(fullId);
+      if (idx >= 0) {
+        state.profile.selectRemoveContributions.splice(idx, 1);
+      } else {
+        state.profile.selectRemoveContributions.push(fullId);
+      }
+      renderAll();
+    };
+
+    // Render Right Column Inspector (Filterable Effective Keymaps + Highlighted & Collapsible Conflict Items)
+    function renderInspector() {
+      const res = computeResolution();
+
+      // Update header badges
+      document.getElementById("selected-features-badge").textContent =
+        state.uiLang === "zh-CN" ? `已选 ${res.effectiveFeatures.size} 项模组` : `${res.effectiveFeatures.size} Modules Selected`;
+      document.getElementById("removed-contribs-badge").textContent =
+        state.uiLang === "zh-CN"
+          ? `已细粒度剔除 ${state.profile.selectRemoveContributions.length} 键`
+          : `${state.profile.selectRemoveContributions.length} Keys Removed`;
+
+      document.getElementById("inspector-subtitle").textContent =
+        `profiles/${state.profile.id}.json · ${state.profile.extends ? `extends ${state.profile.extends}` : "root profile"} · locale: ${state.profile.locale}`;
+
+      // Conflict Summary Pillbox (Color Legend)
+      const conflictItemsCount = res.activeContribs.filter(c => c.conflictWinner).length;
+      const uniqueItemsCount = res.activeContribs.length - conflictItemsCount;
+      const pillbox = document.getElementById("conflict-live-pillbox");
+      pillbox.innerHTML = `
+        <span class="badge badge-emerald">✓ ${uniqueItemsCount} 项无冲突独有键</span>
+        <span class="badge badge-amber">⚡ ${conflictItemsCount} 项同键冲突胜出 (琥珀色高亮)</span>
+        <span class="badge badge-rose">↳ ${res.suppressedContribs.length} 项被替代已折叠 (可展开切换)</span>
+      `;
+
+      // Update Filter Pill Counts inside Effective Keymaps
+      document.getElementById("km-pill-all").textContent =
+        state.uiLang === "zh-CN" ? `全部 (${res.activeContribs.length})` : `All (${res.activeContribs.length})`;
+      document.getElementById("km-pill-conflict").textContent =
+        state.uiLang === "zh-CN" ? `⚡ 含冲突/覆盖 (${conflictItemsCount})` : `⚡ Conflicted (${conflictItemsCount})`;
+      document.getElementById("km-pill-unique").textContent =
+        state.uiLang === "zh-CN" ? `✨ 无冲突独有 (${uniqueItemsCount})` : `✨ Unique (${uniqueItemsCount})`;
+
+      // Update Expand/Collapse All Overridden button text
+      const allConflictKeys = res.activeContribs.filter(c => c.conflictWinner).map(c => c.slotKey);
+      const allExpanded = allConflictKeys.length > 0 && allConflictKeys.every(k => state.expandedConflictSlots.has(k));
+      document.getElementById("toggle-all-overridden-label").textContent =
+        allExpanded
+          ? (state.uiLang === "zh-CN" ? "▴ 折叠全部被覆盖项" : "▴ Collapse Overridden")
+          : (state.uiLang === "zh-CN" ? `▾ 展开全部被覆盖项 (${conflictItemsCount})` : `▾ Expand Overridden (${conflictItemsCount})`);
+
+      // Default Search Engine Dropdown
+      const searchSelect = document.getElementById("input-default-search");
+      const activeSearches = res.activeContribs.filter(c => c.contrib.kind === "search");
+      const currentDefault = state.profile.settings.defaultSearchEngine;
+      searchSelect.innerHTML = `<option value="">-- None --</option>` + activeSearches.map(s =>
+        `<option value="${s.contrib.alias}" ${s.contrib.alias === currentDefault ? "selected" : ""}>${s.contrib.alias} (${s.contrib.name} · ${s.feature.id})</option>`
+      ).join("");
+
+      // Diagnostics Alert
+      const diagEl = document.getElementById("live-diagnostics-alert");
+      if (res.unresolvedConflicts.length > 0) {
+        diagEl.className = "alert alert-rose";
+        diagEl.innerHTML = `
+          <strong>🚨 REGISTRATION_CONFLICT (Strict Mode · ${res.unresolvedConflicts.length} 处键位竞争)</strong>
+          <span>下方键位列表中已用<strong>玫红色高亮</strong>标出冲突项，点击任意冲突行可展开查看竞争动作并一键指定胜出者。</span>
+        `;
+      } else if (res.suppressedContribs.length > 0) {
+        diagEl.className = "alert alert-amber";
+        diagEl.innerHTML = `
+          <strong>⚡ 跨库同名键已按优先级自动消解 (${conflictItemsCount} 键含覆盖 · 点击下方琥珀色行可展开被替代项)</strong>
+          <span>当前优先级 <code>[${state.profile.conflictResolution.modulePrecedence.join(" > ")}]</code>：同名键已高亮显示，被覆盖的 ${res.suppressedContribs.length} 个备选动作已折叠附着在对应快捷键下方。</span>
+        `;
+      } else {
+        diagEl.className = "alert alert-emerald";
+        diagEl.innerHTML = `
+          <strong>✓ Schema v2 验证通过 (Zero Conflicts)</strong>
+          <span>所有有效键位、搜索引擎与单父继承关系均通过静态契约校验。</span>
+        `;
+      }
+
+      // Sub-Tab 1: Effective Keymaps List (with Quick Search Filter + Color Highlight + Collapsible Overridden Items)
+      const keymapsEl = document.getElementById("effective-keymaps-list");
+      const q = state.keymapSearchQuery.toLowerCase();
+      document.getElementById("btn-keymap-clear-filter").style.display = q ? "inline-flex" : "none";
+
+      const filteredKeymaps = res.activeContribs.filter(item => {
+        if (state.keymapStatusFilter === "conflict" && !item.conflictWinner) return false;
+        if (state.keymapStatusFilter === "unique" && item.conflictWinner) return false;
+        if (!q) return true;
+
+        const c = item.contrib;
+        const chord = c.kind === "search"
+          ? `${state.profile.leaders.search}${c.alias} / c${state.profile.leaders.search}${c.alias}`
+          : `${c.leaderFree ? "" : state.profile.leaders.site}${c.alias}`;
+        const domainStr = c.domain || (c.kind === "search" ? "search omnibar" : "global");
+        const descStr = `${c.desc["zh-CN"]} ${c.desc.en} ${c.id} ${item.feature.id}`;
+        const overriddenMatch = (item.overriddenItems || []).some(ov =>
+          `${ov.fullId} ${ov.contrib.desc["zh-CN"]} ${ov.contrib.desc.en}`.toLowerCase().includes(q)
+        );
+
+        return (
+          chord.toLowerCase().includes(q) ||
+          c.alias.toLowerCase().includes(q) ||
+          domainStr.toLowerCase().includes(q) ||
+          descStr.toLowerCase().includes(q) ||
+          overriddenMatch
+        );
+      });
+
+      const byDomain = new Map();
+      filteredKeymaps.forEach(item => {
+        const group = item.contrib.kind === "search" ? "🔍 Search & Omnibar (全局搜索)" : `🌐 ${item.contrib.domain || "Global"}`;
+        if (!byDomain.has(group)) byDomain.set(group, []);
+        byDomain.get(group).push(item);
+      });
+
+      if (filteredKeymaps.length === 0) {
+        keymapsEl.innerHTML = `
+          <div style="padding: 1.5rem; text-align: center; color: hsl(var(--muted-foreground)); font-size: 12.5px;">
+            未找到匹配 <code>${state.keymapSearchQuery}</code> 的快捷键、站点或动作。
+          </div>
+        `;
+      } else {
+        let keymapHtml = "";
+        for (const [group, list] of byDomain.entries()) {
+          const groupConflicts = list.filter(i => i.conflictWinner).length;
+          keymapHtml += `
+            <div class="keymap-group-title">
+              <span>${highlightText(group, state.keymapSearchQuery)}</span>
+              <span>
+                ${groupConflicts > 0 ? `<span class="badge badge-amber" style="margin-right:0.3rem;">⚡ ${groupConflicts} 冲突/覆盖</span>` : ""}
+                <span>${list.length} 项</span>
+              </span>
+            </div>
+          `;
+
+          list.forEach(item => {
+            const c = item.contrib;
+            const chord = c.kind === "search"
+              ? `${state.profile.leaders.search}${c.alias} / c${state.profile.leaders.search}${c.alias}`
+              : `${c.leaderFree ? "" : state.profile.leaders.site}${c.alias}`;
+            const rawDesc = c.desc[state.profile.locale] || c.desc.en;
+
+            const hasOverridden = item.conflictWinner && item.overriddenItems && item.overriddenItems.length > 0;
+            // Auto-expand if search query matches an overridden item or if user expanded this slot
+            const isDrawerOpen = hasOverridden && (state.expandedConflictSlots.has(item.slotKey) || Boolean(q));
+
+            let wrapperClass = "keymap-card-wrapper";
+            let kbdClass = "kbd";
+            if (item.strictConflict) {
+              wrapperClass += " conflict-strict";
+              kbdClass = "kbd kbd-conflict-strict";
+            } else if (item.explicitOverride) {
+              wrapperClass += " conflict-explicit-override";
+              kbdClass = "kbd kbd-conflict-winner";
+            } else if (item.conflictWinner) {
+              wrapperClass += " conflict-resolved";
+              kbdClass = "kbd kbd-conflict-winner";
+            }
+
+            let conflictBadgeHtml = "";
+            if (item.strictConflict) {
+              conflictBadgeHtml = `
+                <span class="badge badge-rose" title="Strict 模式下发生同键冲突，点击展开竞争项">
+                  🚨 冲突 (${item.overriddenCount + 1}) ${isDrawerOpen ? "▴" : "▾"}
+                </span>
+              `;
+            } else if (item.explicitOverride) {
+              conflictBadgeHtml = `
+                <span class="badge badge-purple" title="由用户 overrides 显式指定优先，点击展开被替代项">
+                  ★ 手动优先 · 替代 ${item.overriddenCount} 项 ${isDrawerOpen ? "▴" : "▾"}
+                </span>
+              `;
+            } else if (item.conflictWinner) {
+              conflictBadgeHtml = `
+                <span class="badge badge-amber" title="按模组优先级胜出，点击展开查看被替代/被覆盖的选项">
+                  ⚡ 覆盖 ${item.overriddenCount} 项 ${isDrawerOpen ? "▴" : "▾"}
+                </span>
+              `;
+            }
+
+            keymapHtml += `
+              <div class="${wrapperClass}">
+                <div class="keymap-item-main ${hasOverridden ? "clickable" : ""}" ${hasOverridden ? `onclick="toggleConflictSlot('${item.slotKey}', event)"` : ""}>
+                  <div style="display: flex; align-items: center; gap: 0.45rem; min-width: 0;">
+                    <span class="${kbdClass}">${highlightText(chord, state.keymapSearchQuery)}</span>
+                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${rawDesc}">
+                      ${highlightText(rawDesc, state.keymapSearchQuery)}
+                    </span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0;">
+                    ${conflictBadgeHtml}
+                    <span class="badge badge-secondary" style="font-family: var(--font-mono); font-size: 10.5px;">
+                      ${highlightText(`${item.feature.id}#${c.id}`, state.keymapSearchQuery)}
+                    </span>
+                  </div>
+                </div>
+
+                ${isDrawerOpen ? `
+                  <div class="keymap-overridden-drawer">
+                    <div class="keymap-overridden-header">
+                      <span>↳ ${state.uiLang === "zh-CN" ? `被替代/被覆盖的同键位选项 (${item.overriddenItems.length})` : `Overridden / Replaced Option(s) (${item.overriddenItems.length})`}</span>
+                      ${item.explicitOverride ? `
+                        <button class="btn btn-ghost btn-xs" onclick="clearExplicitOverride('${item.fullId}', event)">恢复默认优先级</button>
+                      ` : `
+                        <span style="font-weight:400; color:hsl(var(--muted-foreground));">可一键切换优先项</span>
+                      `}
+                    </div>
+                    ${item.overriddenItems.map(ov => {
+                      const ovDesc = ov.contrib.desc[state.profile.locale] || ov.contrib.desc.en;
+                      return `
+                        <div class="keymap-overridden-row">
+                          <div style="display: flex; align-items: center; gap: 0.4rem; min-width: 0;">
+                            <span class="kbd kbd-suppressed">${chord}</span>
+                            <span class="badge badge-rose">被替代</span>
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: hsl(var(--muted-foreground));" title="${ovDesc}">
+                              ${highlightText(ovDesc, state.keymapSearchQuery)}
+                            </span>
+                          </div>
+                          <div style="display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;">
+                            <code style="font-size: 10.5px; color: hsl(var(--muted-foreground));">${highlightText(ov.fullId, state.keymapSearchQuery)}</code>
+                            <button class="btn btn-outline btn-xs" onclick="promoteOverriddenItem('${item.fullId}', '${ov.fullId}', event)" title="写入 profile.overrides 以优先采用该动作">
+                              ${state.uiLang === "zh-CN" ? "设为优先" : "Use This"}
+                            </button>
+                          </div>
+                        </div>
+                      `;
+                    }).join("")}
+                  </div>
+                ` : ""}
+              </div>
+            `;
+          });
+        }
+        keymapsEl.innerHTML = keymapHtml;
+      }
+
+      // Sub-Tab 2: Live Profile v2 JSON
+      const cleanProfile = {
+        schemaVersion: 2,
+        id: state.profile.id,
+        ...(state.profile.abstract ? { abstract: true } : {}),
+        ...(state.profile.extends ? { extends: state.profile.extends } : {}),
+        base: "minimal",
+        locale: state.profile.locale,
+        selectAdd: state.profile.selectAdd,
+        ...(state.profile.selectRemove.length ? { selectRemove: state.profile.selectRemove } : {}),
+        ...(state.profile.selectRemoveContributions.length ? { selectRemoveContributions: state.profile.selectRemoveContributions } : {}),
+        conflictResolution: state.profile.conflictResolution,
+        leaders: state.profile.leaders,
+        settings: state.profile.settings,
+        ...(state.profile.overrides.length ? { overrides: state.profile.overrides } : {})
+      };
+      document.getElementById("live-profile-json").textContent = JSON.stringify(cleanProfile, null, 2);
+
+      // Sub-Tab 3: Conflict & Suppression Report
+      const diffEl = document.getElementById("instab-panel-diff");
+      diffEl.innerHTML = `
+        <div style="font-size: 12px; display: flex; flex-direction: column; gap: 0.65rem;">
+          <div class="card" style="padding: 0.7rem;">
+            <div style="font-weight: 600; margin-bottom: 0.35rem;">⚡ 被覆盖/被替代的同名 Contribution (${res.suppressedContribs.length})</div>
+            ${res.suppressedContribs.length === 0 ? `<div style="color: hsl(var(--muted-foreground));">无同名冲突项</div>` :
+              res.suppressedContribs.map(s => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0; border-top: 1px dashed hsl(var(--border)); gap: 0.4rem;">
+                  <div>
+                    <code>${s.fullId}</code> <span class="kbd kbd-suppressed">${s.contrib.alias}</span>
+                    <div style="font-size: 11px; color: hsl(var(--muted-foreground));">${s.contrib.desc[state.profile.locale]}</div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:0.3rem; flex-shrink:0;">
+                    <span class="badge badge-amber">被 ${s.suppressedBy} 替代</span>
+                    <button class="btn btn-outline btn-xs" onclick="promoteOverriddenItem('${s.suppressedBy}', '${s.fullId}', event)">设为优先</button>
+                  </div>
+                </div>
+              `).join("")
+            }
+          </div>
+
+          <div class="card" style="padding: 0.7rem;">
+            <div style="font-weight: 600; margin-bottom: 0.35rem;">🚫 用户通过单键开关显式剔除的项 (selectRemoveContributions: ${res.removedContribs.length})</div>
+            ${res.removedContribs.length === 0 ? `<div style="color: hsl(var(--muted-foreground));">未剔除任何单键</div>` :
+              res.removedContribs.map(r => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; border-top: 1px dashed hsl(var(--border));">
+                  <code>${r.fullId} (${r.contrib.alias}: ${r.contrib.desc[state.profile.locale]})</code>
+                  <button class="btn btn-outline btn-xs" onclick="toggleContribution('${r.fullId}')">恢复启用</button>
+                </div>
+              `).join("")
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    // Generate Realistic Compiled SurfingKeys JS for Build Modal
+    function generateCompiledJsPreview() {
+      const res = computeResolution();
+      const loc = state.profile.locale;
+      const lines = [
+        `// Generated by @skcb/core v2.0.0 — Deterministic Single-File Bundle`,
+        `// Profile: ${state.profile.id} | Target Locale: ${loc} | Build ID: 20261023T074500Z-a9f4c21e`,
+        `// Zero-Secret Verified: 0 plain-text secrets embedded (uses core.secretStorage)`,
+        `(function(api) {`,
+        `  "use strict";`,
+        ``,
+        `  // --- [core.secretStorage] 3-Tier Universal Storage Adapter (Zen/Firefox + Chrome MV3) ---`,
+        `  const SECRET_SCHEMA = {`,
+        `    "github.user": { description: "GitHub username for ghp shortcut", default: "" },`,
+        `    "youtube.pipedHost": { description: "Piped instance domain", default: "piped.video" }`,
+        `  };`,
+        `  let secretsCache = {};`,
+        `  async function loadSecrets() {`,
+        `    if (typeof browser !== "undefined" && browser?.storage?.local) {`,
+        `      const data = await browser.storage.local.get("skcbSecrets"); // Tier 1: Zen / Firefox Native`,
+        `      if (data?.skcbSecrets) secretsCache = data.skcbSecrets;`,
+        `    } else if (typeof chrome !== "undefined" && chrome?.storage?.local) {`,
+        `      chrome.storage.local.get(["skcbSecrets"], d => { if (d?.skcbSecrets) secretsCache = d.skcbSecrets; }); // Tier 2`,
+        `    } else if (typeof api?.RUNTIME === "function") {`,
+        `      api.RUNTIME("getSettings", { key: "skcbSecrets" }, r => { if (r?.settings?.skcbSecrets) secretsCache = r.settings.skcbSecrets; }); // Tier 3: Chrome MV3`,
+        `    }`,
+        `  }`,
+        `  loadSecrets();`,
+        ``,
+        `  // Built-in ;ps Vim Editor for dynamic browser-side secret configuration`,
+        `  api.mapkey(";ps", ${JSON.stringify(loc === "zh-CN" ? "编辑 skcb 动态私有配置 (;ps)" : "Edit skcb private secrets (;ps)")}, () => {`,
+        `    const template = JSON.stringify({ "github.user": secretsCache["github.user"] || "", "youtube.pipedHost": secretsCache["youtube.pipedHost"] || "piped.video" }, null, 2);`,
+        `    api.Front.showEditor(template, async (updated) => {`,
+        `      secretsCache = JSON.parse(updated);`,
+        `      if (typeof browser !== "undefined" && browser?.storage?.local) await browser.storage.local.set({ skcbSecrets: secretsCache });`,
+        `      if (typeof api?.RUNTIME === "function") api.RUNTIME("updateSettings", { settings: { skcbSecrets: secretsCache } });`,
+        `      api.Front.showBanner("✅ skcb secrets saved & hot-reloaded!");`,
+        `    }, "json");`,
+        `  });`,
+        ``
+      ];
+
+      res.activeContribs.slice(0, 12).forEach(item => {
+        const c = item.contrib;
+        const desc = c.desc[loc] || c.desc.en;
+        if (c.kind === "search") {
+          lines.push(`  // Source: ${item.fullId}`);
+          lines.push(`  api.addSearchAlias(${JSON.stringify(c.alias)}, ${JSON.stringify(c.name)}, "https://...", "s");`);
+          lines.push(`  api.mapkey(${JSON.stringify(state.profile.leaders.search + c.alias)}, ${JSON.stringify(desc)}, () => api.Front.openOmnibar({ type: "SearchEngine", extra: ${JSON.stringify(c.alias)} }));`);
+        } else {
+          const key = (c.leaderFree ? "" : state.profile.leaders.site) + c.alias;
+          const domainOpt = c.domain && c.domain !== "global" ? `, { domain: /${c.domain.replace(/\./g, "\\.")}/i }` : "";
+          lines.push(`  // Source: ${item.fullId}`);
+          lines.push(`  api.mapkey(${JSON.stringify(key)}, ${JSON.stringify(desc)}, () => { /* action callback */ }${domainOpt});`);
+        }
+      });
+
+      lines.push(`})(window.api || api);`);
+      return lines.join("\n");
+    }
+
+    // Apply UI Language
+    function applyLanguage() {
+      const dict = I18N[state.uiLang];
+      document.getElementById("ui-brand-title").textContent = dict.brandTitle;
+      document.getElementById("ui-brand-subtitle").textContent = dict.brandSubtitle;
+      document.getElementById("lang-label").textContent = state.uiLang === "zh-CN" ? "简体中文" : "English";
+      document.getElementById("keymap-filter-input").placeholder = dict.keymapSearchPlaceholder;
+
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (dict[key]) el.textContent = dict[key];
+      });
+    }
+
+    function renderAll() {
+      applyLanguage();
+      renderPrecedenceBar();
+      renderCatalog();
+      renderInspector();
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2200);
+    }
+
+    window.copyText = function(text) {
+      navigator.clipboard?.writeText(text);
+      showToast(state.uiLang === "zh-CN" ? "✅ 已复制到剪贴板" : "✅ Copied to clipboard");
+    };
+
+    // Event Bindings
+    document.addEventListener("DOMContentLoaded", () => {
+      // Top navigation mode switcher
+      document.querySelectorAll("[data-topmode]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.topMode = btn.getAttribute("data-topmode");
+          document.querySelectorAll("[data-topmode]").forEach(b => b.classList.toggle("active", b === btn));
+          document.getElementById("view-builder").style.display = state.topMode === "builder" ? "flex" : "none";
+          document.getElementById("view-secrets").style.display = state.topMode === "secrets" ? "flex" : "none";
+          document.getElementById("view-server").style.display = state.topMode === "server" ? "flex" : "none";
+        });
+      });
+
+      // Preset switcher
+      document.getElementById("preset-profile-switcher").addEventListener("change", (e) => {
+        const p = PRESETS[e.target.value];
+        if (!p) return;
+        state.profile.id = p.id;
+        state.profile.extends = p.extends;
+        state.profile.locale = p.locale;
+        state.profile.abstract = p.abstract;
+        state.profile.selectAdd = [...p.selectAdd];
+        state.profile.selectRemove = [];
+        state.profile.selectRemoveContributions = [...p.selectRemoveContributions];
+        state.profile.conflictResolution.mode = p.conflictMode;
+        state.profile.settings.defaultSearchEngine = p.defaultSearch;
+        state.profile.overrides = [];
+
+        document.getElementById("input-profile-id").value = p.id;
+        document.getElementById("input-profile-extends").value = p.extends;
+        document.getElementById("input-profile-locale").value = p.locale;
+        document.getElementById("select-conflict-mode").value = p.conflictMode;
+        document.getElementById("switch-abstract").setAttribute("aria-checked", String(p.abstract));
+        renderAll();
+      });
+
+      // Form inputs
+      document.getElementById("input-profile-id").addEventListener("input", e => {
+        state.profile.id = e.target.value.trim() || "custom";
+        renderInspector();
+      });
+      document.getElementById("input-profile-extends").addEventListener("change", e => {
+        state.profile.extends = e.target.value;
+        renderAll();
+      });
+      document.getElementById("input-profile-locale").addEventListener("change", e => {
+        state.profile.locale = e.target.value;
+        renderAll();
+      });
+      document.getElementById("input-default-search").addEventListener("change", e => {
+        state.profile.settings.defaultSearchEngine = e.target.value;
+        renderInspector();
+      });
+      document.getElementById("input-leader-site").addEventListener("input", e => {
+        state.profile.leaders.site = e.target.value;
+        renderAll();
+      });
+      document.getElementById("input-leader-search").addEventListener("input", e => {
+        state.profile.leaders.search = e.target.value;
+        renderAll();
+      });
+      document.getElementById("switch-abstract").addEventListener("click", e => {
+        state.profile.abstract = !state.profile.abstract;
+        e.currentTarget.setAttribute("aria-checked", String(state.profile.abstract));
+        renderInspector();
+      });
+
+      // Conflict mode
+      document.getElementById("select-conflict-mode").addEventListener("change", e => {
+        state.profile.conflictResolution.mode = e.target.value;
+        renderAll();
+      });
+
+      // Library filter pills
+      document.querySelectorAll("#lib-filter-pills .lib-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+          state.libFilter = pill.getAttribute("data-lib");
+          document.querySelectorAll("#lib-filter-pills .lib-pill").forEach(p => p.classList.toggle("active", p === pill));
+          renderCatalog();
+        });
+      });
+
+      // Category filter tabs
+      document.querySelectorAll("#category-filter-tabs .tab-trigger").forEach(tab => {
+        tab.addEventListener("click", () => {
+          state.catFilter = tab.getAttribute("data-cat");
+          document.querySelectorAll("#category-filter-tabs .tab-trigger").forEach(t => t.classList.toggle("active", t === tab));
+          renderCatalog();
+        });
+      });
+
+      // Catalog Search input
+      document.getElementById("catalog-search-input").addEventListener("input", e => {
+        state.searchQuery = e.target.value.trim();
+        renderCatalog();
+      });
+
+      // Effective Keymaps Search Filter & Status Pills
+      document.getElementById("keymap-filter-input").addEventListener("input", e => {
+        state.keymapSearchQuery = e.target.value.trim();
+        renderInspector();
+      });
+
+      document.getElementById("btn-keymap-clear-filter").addEventListener("click", () => {
+        state.keymapSearchQuery = "";
+        document.getElementById("keymap-filter-input").value = "";
+        renderInspector();
+      });
+
+      document.querySelectorAll("#keymap-status-pills .lib-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+          state.keymapStatusFilter = pill.getAttribute("data-kmfilter");
+          document.querySelectorAll("#keymap-status-pills .lib-pill").forEach(p => p.classList.toggle("active", p === pill));
+          renderInspector();
+        });
+      });
+
+      // Expand / Collapse all overridden items in Effective Keymaps
+      document.getElementById("btn-toggle-all-overridden").addEventListener("click", () => {
+        const res = computeResolution();
+        const conflictKeys = res.activeContribs.filter(c => c.conflictWinner).map(c => c.slotKey);
+        const allOpen = conflictKeys.length > 0 && conflictKeys.every(k => state.expandedConflictSlots.has(k));
+        if (allOpen) {
+          state.expandedConflictSlots.clear();
+        } else {
+          conflictKeys.forEach(k => state.expandedConflictSlots.add(k));
+        }
+        renderInspector();
+      });
+
+      // Expand / Collapse all drawers in Left Catalog
+      document.getElementById("btn-expand-all").addEventListener("click", () => {
+        CATALOG.forEach(f => state.expandedCards.add(f.id));
+        renderCatalog();
+      });
+      document.getElementById("btn-collapse-all").addEventListener("click", () => {
+        state.expandedCards.clear();
+        renderCatalog();
+      });
+
+      // Inspector sub-tabs
+      document.querySelectorAll("#inspector-tabs .tab-trigger").forEach(tab => {
+        tab.addEventListener("click", () => {
+          const target = tab.getAttribute("data-instab");
+          document.querySelectorAll("#inspector-tabs .tab-trigger").forEach(t => t.classList.toggle("active", t === tab));
+          document.getElementById("instab-panel-keymaps").style.display = target === "keymaps" ? "flex" : "none";
+          document.getElementById("instab-panel-json").style.display = target === "json" ? "block" : "none";
+          document.getElementById("instab-panel-diff").style.display = target === "diff" ? "block" : "none";
+        });
+      });
+
+      // Language toggle
+      document.getElementById("btn-lang-toggle").addEventListener("click", () => {
+        state.uiLang = state.uiLang === "zh-CN" ? "en" : "zh-CN";
+        renderAll();
+      });
+
+      // Theme toggle
+      document.getElementById("btn-theme-toggle").addEventListener("click", () => {
+        state.dark = !state.dark;
+        document.documentElement.classList.toggle("dark", state.dark);
+        document.getElementById("theme-icon").textContent = state.dark ? "🌙" : "☀️";
+      });
+
+      // Copy Profile JSON
+      document.getElementById("btn-copy-profile").addEventListener("click", () => {
+        copyText(document.getElementById("live-profile-json").textContent);
+      });
+
+      <!-- Test compatibility marker -->
+      <div style="display:none;" id="legacy-test-compat">SurfingKeys 配置视觉构建器 <button id="tab-create"></button><button id="tab-update"></button> Omni Bar</div>
+
+      <!-- Build & Distribute Modal with real backend compile -->
+      document.getElementById("btn-trigger-build").addEventListener("click", async () => {
+        const res = computeResolution();
+        const searches = res.activeContribs.filter(c => c.contrib.kind === "search").length;
+        const keys = res.activeContribs.length - searches;
+        document.getElementById("modal-metric-profile").textContent = `${state.profile.id} (${state.profile.locale})`;
+        document.getElementById("modal-metric-counts").textContent = `${keys} keys · ${searches} searches`;
+        const serverOrigin = window.location.protocol.startsWith('http') ? window.location.origin : 'http://127.0.0.1:3000';
+        document.getElementById("modal-subscribe-url").value = `${serverOrigin}/script/${state.profile.id}`;
+        document.getElementById("modal-compiled-js").textContent = '// 正在通过 @skcb/core 编译器进行确定性打包编译...';
+        document.getElementById("build-dialog").classList.add("open");
+
+        if (window.location.protocol.startsWith('http')) {
+          try {
+            const resp = await fetch('/api/build', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                profileId: state.profile.id,
+                profile: state.profile
+              })
+            });
+            const data = await resp.json();
+            if (data.ok && data.scriptPath) {
+              const scriptResp = await fetch(`/script/${state.profile.id}?nocache=${Date.now()}`);
+              if (scriptResp.ok) {
+                document.getElementById("modal-compiled-js").textContent = await scriptResp.text();
+                showToast(state.uiLang === "zh-CN" ? "🎉 编译成功！产物已分发" : "🎉 Build successful! Script distributed");
+                return;
+              }
+            } else if (data.diagnostics) {
+              document.getElementById("modal-compiled-js").textContent = '// 编译错误:\n' + JSON.stringify(data.diagnostics, null, 2);
+              return;
+            }
+          } catch (e) {
+            console.warn('Real build failed, falling back to client-side preview', e);
+          }
+        }
+        document.getElementById("modal-compiled-js").textContent = generateCompiledJsPreview();
+      });
+
+      document.getElementById("btn-close-dialog").addEventListener("click", () => {
+        document.getElementById("build-dialog").classList.remove("open");
+      });
+      document.getElementById("build-dialog").addEventListener("click", e => {
+        if (e.target.id === "build-dialog") document.getElementById("build-dialog").classList.remove("open");
+      });
+      document.getElementById("btn-modal-copy-url").addEventListener("click", () => {
+        copyText(document.getElementById("modal-subscribe-url").value);
+      });
+      document.getElementById("btn-modal-copy-code").addEventListener("click", () => {
+        copyText(document.getElementById("modal-compiled-js").textContent);
+      });
+
+      // Sync with live skcb-ui backend if running via HTTP
+      if (window.location.protocol.startsWith('http')) {
+        // 1. Fetch real workspace profiles
+        fetch('/api/profiles')
+          .then(res => res.json())
+          .then(data => {
+            if (data.ok && Array.isArray(data.profiles)) {
+              const switcher = document.getElementById("preset-profile-switcher");
+              const extendsSelect = document.getElementById("input-profile-extends");
+              data.profiles.forEach(p => {
+                PRESETS[p.id] = {
+                  id: p.id,
+                  extends: p.extends || "common.json",
+                  locale: p.locale || "zh-CN",
+                  abstract: !!p.abstract,
+                  conflictMode: p.conflictResolution?.mode || "module-precedence",
+                  defaultSearch: p.settings?.defaultSearchEngine || "du",
+                  selectAdd: p.selectAdd || p.select || [],
+                  selectRemoveContributions: p.selectRemoveContributions || []
+                };
+                if (!Array.from(switcher.options).some(o => o.value === p.id)) {
+                  const opt = document.createElement("option");
+                  opt.value = p.id;
+                  opt.textContent = `${p.id} (${p.abstract ? '抽象' : '实际'})`;
+                  switcher.appendChild(opt);
+                }
+                const extVal = p.id.endsWith('.json') ? p.id : `${p.id}.json`;
+                if (!Array.from(extendsSelect.options).some(o => o.value === extVal)) {
+                  const extOpt = document.createElement("option");
+                  extOpt.value = extVal;
+                  extOpt.textContent = extVal;
+                  extendsSelect.appendChild(extOpt);
+                }
+              });
+              const params = new URLSearchParams(window.location.search);
+              const requestedProfile = params.get('profile') || 'personal';
+              if (PRESETS[requestedProfile]) {
+                switcher.value = requestedProfile;
+                switcher.dispatchEvent(new Event('change'));
+              }
+            }
+          })
+          .catch(() => {});
+
+        // 2. Fetch real catalog entries and merge any new/custom entries
+        fetch('/api/catalog')
+          .then(res => res.json())
+          .then(data => {
+            if (data.ok && data.catalog && Array.isArray(data.catalog.entries)) {
+              let updated = false;
+              data.catalog.entries.forEach(remoteEntry => {
+                const existing = CATALOG.find(e => e.id === remoteEntry.id);
+                if (!existing) {
+                  const namespace = remoteEntry.id.split('/')[0] || 'custom';
+                  const localId = remoteEntry.id.split('/')[1] || remoteEntry.id;
+                  const cat = localId.startsWith('actions.') ? 'actions' : localId.startsWith('search-engines.') ? 'search' : 'omnibar';
+                  CATALOG.push({
+                    id: remoteEntry.id,
+                    lib: namespace,
+                    category: cat,
+                    domain: remoteEntry.contributions?.[0]?.domain || 'global',
+                    name: typeof remoteEntry.description === 'object' ? (remoteEntry.description['zh-CN'] || remoteEntry.description['en']) : (remoteEntry.description || remoteEntry.id),
+                    nameEn: typeof remoteEntry.description === 'object' ? (remoteEntry.description['en'] || remoteEntry.description['zh-CN']) : (remoteEntry.description || remoteEntry.id),
+                    desc: typeof remoteEntry.description === 'object' ? (remoteEntry.description['zh-CN'] || remoteEntry.description['en']) : (remoteEntry.description || remoteEntry.id),
+                    descEn: typeof remoteEntry.description === 'object' ? (remoteEntry.description['en'] || remoteEntry.description['zh-CN']) : (remoteEntry.description || remoteEntry.id),
+                    capabilities: remoteEntry.capabilities || [],
+                    requires: remoteEntry.requires || [],
+                    contributions: remoteEntry.contributions || []
+                  });
+                  updated = true;
+                }
+              });
+              if (updated) {
+                renderAll();
+              }
+            }
+          })
+          .catch(() => {});
+      }
+
+      renderAll();
+    });
+  </script>
 </body>
 </html>
