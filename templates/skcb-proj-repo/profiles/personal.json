@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "id": "personal",
+  "extends": "common.json",
+  "selectAdd": [
+    "b0o/actions.amazon",
+    "b0o/search-engines.ddg",
+    "ent/actions.bilibili",
+    "ent/search-engines.bilibili",
+    "tech/actions.github",
+    "tech/search-engines.sspai"
+  ],
+  "selectRemoveContributions": [
+    "ent/actions.bilibili#danmaku"
+  ],
+  "conflictResolution": {
+    "mode": "module-precedence",
+    "modulePrecedence": ["tech", "b0o"]
+  }
+}

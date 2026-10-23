@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "namespace": "sample",
+  "entries": {
+    "actions.example": {
+      "entry": "dist/index.js",
+      "description": {
+        "en": "Sample site actions",
+        "zh-CN": "示例站点动作"
+      },
+      "requires": [],
+      "capabilities": ["core.openLink"],
+      "contributions": [
+        {
+          "id": "open-dashboard",
+          "alias": "od",
+          "description": {
+            "en": "Open sample dashboard",
+            "zh-CN": "打开示例面板"
+          },
+          "kind": "mapkey",
+          "domain": "example.com",
+          "callbackRequired": true
+        }
+      ]
+    }
+  }
+}

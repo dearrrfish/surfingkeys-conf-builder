@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "id": "common",
+  "abstract": true,
+  "base": "minimal",
+  "locale": "zh-CN",
+  "leaders": {
+    "site": "<Space>",
+    "search": "a"
+  },
+  "settings": {
+    "defaultSearchEngine": "du"
+  }
+}

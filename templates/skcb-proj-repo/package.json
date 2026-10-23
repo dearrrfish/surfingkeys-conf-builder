@@ -1,0 +1,27 @@
+{
+  "name": "my-surfingkeys-config",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Custom SurfingKeys configuration built with skcb",
+  "scripts": {
+    "build": "skcb build --all",
+    "build:personal": "skcb build --profile personal",
+    "build:work": "skcb build --profile work",
+    "explain": "skcb explain --profile personal",
+    "catalog": "skcb catalog",
+    "ui": "skcb-ui --port 3000",
+    "serve": "skcb-ui --port 3000 --serve-only"
+  },
+  "dependencies": {
+    "@skcb/core": "^0.2.0",
+    "@skcb/ui": "^0.2.0",
+    "@skcb/lib-b0o": "^0.2.0",
+    "@skcb/lib-ent": "^0.2.0",
+    "@skcb/lib-tech": "^0.2.0",
+    "@skcb/lib-prod": "^0.2.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@my-org/skcb-lib-sample",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Third-party function module for SurfingKeys Config Builder",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./selective.json": "./selective.json",
+    "./*": "./dist/*"
+  },
+  "files": [
+    "dist",
+    "selective.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@skcb/core": "^0.2.0"
+  },
+  "devDependencies": {
+    "@skcb/core": "^0.2.0",
+    "@types/node": "24.0.0",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

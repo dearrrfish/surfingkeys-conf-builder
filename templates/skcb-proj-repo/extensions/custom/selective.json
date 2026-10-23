@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "namespace": "custom",
+  "entries": {
+    "actions.hello": {
+      "entry": "entry.js",
+      "description": {
+        "en": "Sample custom action",
+        "zh-CN": "示例自定义站点动作"
+      },
+      "requires": [],
+      "capabilities": ["core.openLink"],
+      "contributions": [
+        {
+          "id": "hello",
+          "alias": "gh",
+          "description": {
+            "en": "Say hello or navigate",
+            "zh-CN": "打招呼或自定义跳转"
+          },
+          "kind": "mapkey",
+          "domain": "global",
+          "callbackRequired": true
+        }
+      ]
+    }
+  }
+}

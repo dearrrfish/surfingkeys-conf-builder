@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2,
+  "libraries": [
+    "@skcb/lib-b0o",
+    "@skcb/lib-ent",
+    "@skcb/lib-tech",
+    "@skcb/lib-prod",
+    "./extensions/custom"
+  ],
+  "profilesDir": "profiles",
+  "outDir": "dist"
+}

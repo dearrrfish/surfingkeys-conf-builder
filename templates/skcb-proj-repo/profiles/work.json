@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 2,
+  "id": "work",
+  "extends": "common.json",
+  "selectAdd": [
+    "tech/actions.github",
+    "tech/search-engines.github",
+    "prod/actions.gmail"
+  ]
+}
