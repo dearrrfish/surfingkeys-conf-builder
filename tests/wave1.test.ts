@@ -249,7 +249,9 @@ function makeRequest(urlStr: string, options: {method?: string; headers?: Record
       res.on('end', () => resolve({statusCode: res.statusCode || 0, body: data}));
     });
     req.on('error', reject);
-    if (options.body) req.write(options.body);
+    if (options.body) {
+      req.write(options.body);
+    }
     req.end();
   });
 }

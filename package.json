@@ -9,6 +9,8 @@
   },
   "scripts": {
     "build": "tsc && node -e \"require('node:fs').chmodSync('dist-tool/cli.js',0o755); require('node:fs').chmodSync('dist-tool/server.js',0o755)\"",
+    "build:packages": "pnpm -r --filter \"./packages/*\" build",
+    "build:all": "npm run build && npm run build:packages",
     "ui": "npm run build && node dist-tool/server.js",
     "serve": "npm run ui",
     "typecheck": "tsc --noEmit",

@@ -6,12 +6,11 @@ import {fileURLToPath} from 'node:url';
 import Ajv from 'ajv';
 import {fixture} from './helpers.ts';
 import {workspace} from '../packages/core/dist/input.js';
-import {loadMetadataCatalog, selection} from '../packages/core/dist/catalog.js';
+import {loadMetadataCatalog} from '../packages/core/dist/catalog.js';
 import {resolveProfile, explain} from '../packages/core/dist/profiles.js';
 import {
   ADAPTER_TARGET_SHA,
-  verifyUpstreamSubmodule,
-  buildB0oAdapter
+  verifyUpstreamSubmodule
 } from '../packages/lib-b0o/dist-adapter/adapter.js';
 
 const __filename = fileURLToPath(import.meta.url);

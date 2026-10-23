@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & Test (Node.js 24)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Code style linting
+        run: pnpm run lint
+
+      - name: TypeScript type checking
+        run: pnpm run typecheck
+
+      - name: Build all workspace packages
+        run: pnpm run build:all
+
+      - name: Run test suite (80 unit & integration tests)
+        run: pnpm test
+
+      - name: Verify clean working tree
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)" || (echo "Working directory has unstaged modifications" && exit 1)
