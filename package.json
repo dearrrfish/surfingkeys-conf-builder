@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "bin": {
-    "skcb": "dist-tool/cli.js"
+    "skcb": "dist-tool/cli.js",
+    "skcb-ui": "dist-tool/server.js"
   },
   "scripts": {
-    "build": "tsc && node -e \"require('node:fs').chmodSync('dist-tool/cli.js',0o755)\"",
+    "build": "tsc && node -e \"require('node:fs').chmodSync('dist-tool/cli.js',0o755); require('node:fs').chmodSync('dist-tool/server.js',0o755)\"",
+    "ui": "npm run build && node dist-tool/server.js",
+    "serve": "npm run ui",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests",
     "test": "node --test tests/*.test.ts",

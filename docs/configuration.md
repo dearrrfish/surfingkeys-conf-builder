@@ -91,3 +91,10 @@ node dist-tool/cli.js sources lock --workspace my-config/surfingkeys.workspace.j
 ```
 
 普通扩展目录按可接受内容摘要；Git 扩展还要求工作树干净，摘要包含被允许的 Git 忽略源码。私有路径、conf.priv、.env、secrets/credentials 和构建依赖/缓存目录不作为来源输入。改 profile 不必刷新来源锁；改来源实现或工具链锁后须先确认变化，再刷新。摘要协议见 [lock schema](../schemas/lock.schema.json)与 [来源实现](../src/sources.ts)。
+
+## 网页视觉方案 (Web UI)
+
+针对新方案的创建（`create` 技能）及已有方案的审查与编辑（`update` 技能），可使用网页视觉构建器：
+- 启动服务：`npm run ui` 或打开 `ui/index.html`。
+- 可视化选择网站适配、搜索引擎及 Omni Bar 键位联动。
+- 详情参见 [HTML 视觉配置方案](visual-interface.md)。

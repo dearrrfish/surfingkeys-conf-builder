@@ -19,4 +19,15 @@ description: Generate a new SurfingKeys builder configuration profile from user 
 
 CLI 未实现时做 JSON 语法与本文合并规则的静态检查，在伴随说明写 `# VERIFY: CLI 就绪后对 <id> 运行 validate/explain；目前只完成草案静态检查`。JSON 文件不能含注释，不声称语义验证或构建已通过。
 
+## 视觉方案支持 (Visual Profile Builder)
+
+除了命令行与文本模式，项目提供 HTML 网页视觉方案供用户可视化选择网站适配与搜索引擎、Omni Bar 支持来组合并保存新方案：
+- 启动工作区视觉服务：`npm run ui`（或 `node dist-tool/server.js`，默认运行在 `http://127.0.0.1:3000`）。
+- 离线独立模式：直接在浏览器打开 `ui/index.html`（无需后端，支持本地导出与导入）。
+- 在“创建新方案 (Create)”视图中：
+  1. 输入 kebab-case 方案 ID、选择父级方案（如 `./common.json`）与快捷键前缀（`leaders.site` 与 `leaders.search`）。
+  2. 在“网站专属适配”区可视化勾选 Amazon 等站点功能，卡片展示域名与生效快捷键。
+  3. 在“搜索引擎与 Omni Bar 支持”区勾选 DuckDuckGo 等，自动展示 Omni Bar 激活键（`adu`/`cadu`）并联动选择 `defaultSearchEngine`。
+  4. 实时核对有效按键预览与 Schema 校验，通过“保存到工作区”或“下载”保存为 `profiles/<id>.json`。
+
 交付实际 profile 文件和简洁影响说明，记录验证命令及结果。仅编辑目标新方案；不修改共享父方案、扩展源码、source lock 或用户私有配置。

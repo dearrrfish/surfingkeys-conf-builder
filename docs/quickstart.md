@@ -55,3 +55,17 @@ node dist-tool/cli.js build --workspace my-config/surfingkeys.workspace.json --a
 成功输出包含 buildId、scriptPath 和 reportPath。读取对应 surfingkeys.js，按 [浏览器使用](browser.md)安装到 SurfingKeys。build-all 排除 abstract 父方案，各方案分别发布。
 
 `validate/explain` 成功和 `buildReady: true` 只表示静态分析通过。工厂检查、浏览器键盘行为和网站服务仍需分别验证。详细诊断和产物格式见 [构建与产物](building.md)。
+
+## 5. 网页视觉配置方案 (Web UI)
+
+除了命令行外，项目还提供网页视觉交互方案，供用户通过图形界面选择网站适配、搜索引擎及 Omni Bar 交互，支持方案创建与更新：
+
+```sh
+npm run ui
+# 或
+npm run serve
+# 或直接运行可执行脚本
+./dist-tool/server.js --workspace my-config/surfingkeys.workspace.json
+```
+
+或直接在浏览器打开本地 `ui/index.html`。详细使用方法与 API 请参见 [HTML 视觉配置方案](visual-interface.md)。

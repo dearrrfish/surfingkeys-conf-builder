@@ -18,4 +18,5 @@
 node_modules/
 .cache/
 dist-tool/
+dist/
 .generated/

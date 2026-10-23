@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SurfingKeys 配置方案视觉构建器 (Visual Profile Builder)</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div>
+        <h1 class="brand-title">SurfingKeys 配置视觉构建器</h1>
+        <div class="brand-subtitle">选择网站适配、搜索引擎与 Omni Bar 交互以生成并维护 Profile</div>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <!-- Workflow Mode Selector -->
+      <div class="mode-tabs" role="tablist">
+        <button id="tab-create" class="mode-tab active" data-mode="create" title="基于 create 技能：组合功能、生成全新方案">
+          <span>✨ 创建新方案 (Create)</span>
+        </button>
+        <button id="tab-update" class="mode-tab" data-mode="update" title="基于 update 技能：载入已有配置、差量编辑维护">
+          <span>🔄 更新已有配置 (Update)</span>
+        </button>
+      </div>
+
+      <!-- Server / Offline Connection Badge -->
+      <div id="connection-pill" class="status-pill offline" title="检测工作区服务器状态">
+        <span class="status-dot"></span>
+        <span id="connection-text">检查连接...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid App Layout -->
+  <main class="app-container">
+    <!-- Left Column: Form & Features Selection -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">
+          <span id="workflow-icon">🛠️</span>
+          <span id="workflow-title">新配置方案设计</span>
+        </h2>
+        <span id="workflow-badge" class="badge badge-purple">create 技能流</span>
+      </div>
+
+      <!-- Update Mode: Profile Loader -->
+      <div id="update-profile-loader" class="section-box" style="display: none;">
+        <div class="section-heading">
+          <span>📁 选择目标已有配置方案</span>
+          <span class="badge badge-yellow">加载已有 profile</span>
+        </div>
+        <div class="section-desc">载入工作区中的现有 profile 或上传本地 JSON，继承与覆盖字段将自动解析。</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="existing-profile-select">工作区 Profiles</label>
+            <select id="existing-profile-select" class="form-select">
+              <option value="">-- 选择工作区已有方案 --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="import-file-input">或者上传自定义 JSON</label>
+            <input type="file" id="import-file-input" accept=".json" class="form-input" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Base & Metadata -->
+      <div class="section-box">
+        <div class="section-heading">
+          <span>⚙️ 基础元数据与继承关系</span>
+          <span class="badge">Schema v1</span>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="profile-id">
+              <span>方案 ID (id) *</span>
+              <small class="text-muted">kebab-case 命名</small>
+            </label>
+            <input type="text" id="profile-id" class="form-input" placeholder="例如: personal, work, shopping" value="custom-profile" />
+          </div>
+          <div class="form-group">
+            <label for="profile-extends">
+              <span>父级方案 (extends)</span>
+              <small class="text-muted">单父继承相对路径</small>
+            </label>
+            <select id="profile-extends" class="form-select">
+              <option value="">(无父方案，作为根方案)</option>
+              <option value="./common.json">./common.json</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="profile-base">
+              <span>运行基底 (base)</span>
+              <small class="text-muted">仅支持 minimal</small>
+            </label>
+            <select id="profile-base" class="form-select" disabled>
+              <option value="minimal" selected>minimal (干净基底)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-checkbox-label">
+              <input type="checkbox" id="profile-abstract" />
+              <span>抽象方案 (abstract - 仅作父方案，不单独构建)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Leaders Configuration -->
+        <div class="form-grid" style="margin-top: 1rem; border-top: 1px dashed var(--border-color); padding-top: 0.75rem;">
+          <div class="form-group">
+            <label for="leader-site">
+              <span>站点快捷键前缀 (leaders.site)</span>
+              <small class="text-muted">默认: &lt;Space&gt;</small>
+            </label>
+            <input type="text" id="leader-site" class="form-input" value="<Space>" placeholder="<Space>" />
+          </div>
+          <div class="form-group">
+            <label for="leader-search">
+              <span>搜索/Omni Bar 前缀 (leaders.search)</span>
+              <small class="text-muted">默认: a</small>
+            </label>
+            <input type="text" id="leader-search" class="form-input" value="a" placeholder="a" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Website Adaptations (网站适配) -->
+      <div class="section-box">
+        <div class="section-heading">
+          <span>🌐 网站专属适配 (Website Adaptations)</span>
+          <span id="site-features-count" class="badge badge-green">已选 0 项</span>
+        </div>
+        <div class="section-desc">为特定域名定制的专属交互操作。绑定域内专属快捷键，依赖词法分析注入所需能力。</div>
+        
+        <div id="website-adaptations-container" class="feature-cards-grid">
+          <!-- Dynamically populated or fallback -->
+        </div>
+      </div>
+
+      <!-- Section: Search Engines & Omni Bar Support -->
+      <div class="section-box">
+        <div class="section-heading">
+          <span>🔍 搜索引擎与 Omni Bar 支持</span>
+          <span id="search-features-count" class="badge badge-green">已选 0 项</span>
+        </div>
+        <div class="section-desc">配置全局搜索引擎及 Omni Bar 智能补全联动，自动绑定触发键及剪贴板快捷键。</div>
+
+        <!-- Omni Bar Preview Banner -->
+        <div class="omnibar-banner">
+          <div class="omnibar-banner-info">
+            <h4>Omni Bar 搜索交互联动机制</h4>
+            <p>选中的搜索引擎将自动向 SurfingKeys 注册：<br>
+               1. 激活快捷键：<code>leaders.search + alias</code> 打开 Omni Bar 搜索框。<br>
+               2. 剪贴板搜索：<code>c + leaders.search + alias</code> 自动读取剪贴板内容并触发 Omni Bar。<br>
+               3. 实时补全：支持从指定 API 补全地址异步获取搜索联想。
+            </p>
+          </div>
+          <div class="omnibar-keys">
+            <span class="key-badge" id="omnibar-key-preview">adu / cadu</span>
+          </div>
+        </div>
+
+        <!-- Search Engines Selection Cards -->
+        <div id="search-engines-container" class="feature-cards-grid">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Default Search Engine Selector -->
+        <div class="form-group" style="margin-top: 1.25rem;">
+          <label for="default-search-engine">
+            <span>默认搜索引擎 (settings.defaultSearchEngine)</span>
+            <small class="text-muted">必须匹配有效启用的搜索引擎 alias</small>
+          </label>
+          <select id="default-search-engine" class="form-select">
+            <option value="">-- 未指定默认搜索引擎 --</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Advanced: Settings, Overrides, Remove (Update Mode) -->
+      <div id="advanced-config-box" class="section-box">
+        <div class="section-heading">
+          <span>🔧 高级配置 (Settings & Overrides)</span>
+          <span class="badge badge-yellow">进阶选项</span>
+        </div>
+        <div class="section-desc">自定义顶层 settings 键值、差量移除父方案功能 (selectRemove) 或处理按键冲突覆盖 (overrides)。</div>
+        
+        <!-- selectRemove (Visible in Update Mode) -->
+        <div id="select-remove-container" style="display: none; margin-bottom: 1rem;">
+          <label class="form-group">
+            <span style="font-weight: 500; font-size: 0.85rem; color: var(--accent-red);">从父方案中移除的功能 (selectRemove)</span>
+            <small class="text-muted">勾选要从父方案直接选择中剔除的 feature ID</small>
+          </label>
+          <div id="select-remove-list" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <!-- populated dynamically -->
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="custom-settings-json">
+            <span>自定义 Settings (JSON 对象格式)</span>
+            <small class="text-muted">合并到 profile.settings</small>
+          </label>
+          <textarea id="custom-settings-json" class="form-input" rows="3" style="font-family: var(--font-mono); font-size: 0.8rem;" placeholder='{\n  "theme": "default"\n}'></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Live Preview & Diagnostics -->
+    <div class="panel preview-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">
+          <span>📋 配置预览与诊断</span>
+        </h2>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button id="btn-copy-json" class="btn btn-outline btn-sm" title="复制 Profile JSON 到剪贴板">📋 复制</button>
+          <button id="btn-download-json" class="btn btn-outline btn-sm" title="下载 Profile JSON 文件">💾 下载</button>
+          <button id="btn-save-workspace" class="btn btn-primary btn-sm" title="直接写回工作区 profiles 目录">🚀 保存到工作区</button>
+          <button id="btn-build-script" class="btn btn-success btn-sm" title="根据当前实时配置一键构建最终 SurfingKeys 脚本">🔨 构建脚本</button>
+        </div>
+      </div>
+
+      <!-- Diagnostics Panel -->
+      <div id="diagnostics-box" class="diagnostics-box valid">
+        <strong>✓ 语法与 Schema 验证通过</strong>
+        <span>配置符合 profile.schema.json 规范。</span>
+      </div>
+
+      <!-- Keymap Preview Summary -->
+      <div class="section-box" style="padding: 0.9rem;">
+        <div class="section-heading" style="font-size: 0.85rem; margin-bottom: 0.4rem;">
+          <span>🎹 有效快捷键与 Omni Bar 映射概览 (Keymap Overview)</span>
+        </div>
+        <div id="effective-keymaps-preview" class="keymap-list">
+          <div class="text-muted">勾选左侧功能以预览快捷键绑定...</div>
+        </div>
+      </div>
+
+      <!-- Update Mode: Diff View -->
+      <div id="diff-section" class="section-box" style="display: none; padding: 0.9rem;">
+        <div class="section-heading" style="font-size: 0.85rem; margin-bottom: 0.4rem;">
+          <span>⚖️ 前后修改差异 (Profile Diff)</span>
+        </div>
+        <div id="diff-output" class="diff-view">
+          <span class="text-muted">暂无修改</span>
+        </div>
+      </div>
+
+      <!-- Code Box: Generated JSON -->
+      <div class="code-container">
+        <div class="code-header">
+          <span id="preview-filename">profiles/custom-profile.json</span>
+          <span class="badge">Live Generated</span>
+        </div>
+        <pre id="json-preview" class="code-editor">{\n  "schemaVersion": 1,\n  "id": "custom-profile"\n}</pre>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div>
+      <strong>SurfingKeys Configuration Builder</strong> &bull; 
+      配合 <code>surfingkeys-profile-create</code> 与 <code>surfingkeys-profile-update</code> 技能使用
+    </div>
+    <div>
+      <a href="./docs/configuration.md" target="_blank">配置方案文档</a> &bull;
+      <a href="./docs/browser.md" target="_blank">浏览器使用指引</a>
+    </div>
+  </footer>
+
+  <!-- Build Result Modal -->
+  <div id="build-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🎉 最终 SurfingKeys 脚本构建成功</span>
+        </div>
+        <button id="modal-close-x" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="build-metrics-grid">
+          <div class="metric-card">
+            <span class="metric-label">方案 ID</span>
+            <span id="build-metric-id" class="metric-value">personal</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Build ID</span>
+            <span id="build-metric-buildid" class="metric-value" style="font-size: 0.75rem;">...</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">脚本大小</span>
+            <span id="build-metric-size" class="metric-value">0 KB</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">生效功能</span>
+            <span id="build-metric-features" class="metric-value">0 项</span>
+          </div>
+        </div>
+
+        <div class="section-box" style="padding: 0.75rem 1rem;">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.35rem;">
+            <strong>产物路径:</strong> <code id="build-script-path">dist/.../surfingkeys.js</code>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary);">
+            <strong>打包依赖:</strong> <span id="build-metric-packages">dompurify, uhtml</span>
+          </div>
+        </div>
+
+        <!-- Solutions for Chrome / SurfingKeys Storage Limit -->
+        <div class="section-box" style="padding: 0.9rem 1rem; border-color: rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.75);">
+          <div style="font-size: 0.875rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.35rem;">
+            💡 适配 SurfingKeys 配置大小限制（突破 Chrome 8KB 存储配额）
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6;">
+            <strong>推荐方案 A（突破存储配额，官方推荐）：</strong>在 SurfingKeys 扩展选项页勾选 <code>Load settings from</code>，直接填入本地直链 URL（无体积限制，完整加载全部依赖）：
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem; align-items: center;">
+              <code id="load-settings-url" style="color: var(--accent-yellow); background: var(--bg-primary); padding: 0.3rem 0.6rem; border-radius: 4px; flex: 1; font-family: var(--font-mono); font-size: 0.8rem;">/script/profile</code>
+              <button id="modal-btn-copy-url" class="btn btn-outline btn-sm">🔗 复制直链 URL</button>
+            </div>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; margin-top: 0.75rem;">
+            <strong>轻量方案 B（直接粘贴模式，&lt; 3 KB）：</strong>若不想使用本地 URL 加载，而是直接把代码粘贴进 SurfingKeys 的设置输入框中，请点击下方复制轻量精简片段（纯净原生 API，体积仅 1~2 KB，绝不超标）：
+            <div style="margin-top: 0.35rem;">
+              <button id="modal-btn-copy-snippet" class="btn btn-success btn-sm">📋 复制轻量精简片段 (&lt; 3KB，直接粘贴)</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--accent-cyan);">surfingkeys.js 脚本内容预览:</span>
+          </div>
+          <pre id="build-script-code" class="script-preview-scroll"></pre>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="modal-btn-copy" class="btn btn-outline btn-sm">📋 复制全量脚本 (143KB)</button>
+        <button id="modal-btn-download" class="btn btn-primary btn-sm">💾 下载 surfingkeys.js</button>
+        <button id="modal-btn-close" class="btn btn-outline btn-sm">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

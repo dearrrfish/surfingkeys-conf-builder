@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "common",
+  "abstract": true,
+  "base": "minimal",
+  "selectAdd": [
+    "upstream/search-engines.ddg"
+  ],
+  "settings": {
+    "defaultSearchEngine": "du"
+  },
+  "leaders": {
+    "site": "<Space>",
+    "search": "a"
+  }
+}

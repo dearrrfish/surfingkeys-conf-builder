@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "digestRule": "sha256-path-content-v1-private-excluded",
+  "adapterVersion": "b0o-v1-static-1",
+  "upstream": {
+    "root": "../surfingkeys-conf",
+    "contentHash": "d6f24c6ba8f7ff36d622253e9db0a5080f5468406e5803160594267cdc2dbd5f",
+    "sha": "80176490f6d04c61d10bcbc20618bd283b94ca23"
+  },
+  "extensions": [
+    {
+      "root": "examples/basic/custom/notes",
+      "contentHash": "b62902d6a8290f8b42f0c88f4c532501d8b5b2be39777f8077f0370da2e1eb3a",
+      "namespace": "example_notes"
+    }
+  ],
+  "toolchainHash": "8935f8ce2367b715a0caeb861ad4de409c976445a76d6c6066684bb08b1619bd"
+}

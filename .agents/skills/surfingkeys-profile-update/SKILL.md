@@ -19,4 +19,15 @@ CLI 可用时重新 validate/explain；compare 命令已实现且有上一 build
 
 CLI 未实现时做 JSON 语法与静态合并检查，在伴随报告写 `# VERIFY: CLI 就绪后对受影响方案运行 validate/explain/compare；当前未验证构建或浏览器行为`。JSON 不写注释。无法确认的 catalog 项明确标成未验证，不报告成功。
 
+## 视觉方案支持 (Visual Profile Builder)
+
+更新已有配置方案时，亦可通过 HTML 网页视觉方案进行直观审查与差量维护：
+- 启动工作区视觉服务：`npm run ui`（或 `node dist-tool/server.js`，运行在 `http://127.0.0.1:3000`），或浏览器直接打开 `ui/index.html`。
+- 在“更新已有配置 (Update)”视图中：
+  1. 在“选择目标已有配置方案”下拉菜单中载入已有方案（例如 `personal.json` 或 `work.json`），或上传自定义 JSON。
+  2. 观察继承自父方案的选择与当前方案的直接选择。
+  3. 通过反选或勾选调整 `selectAdd`，在高级区勾选要从父方案移除的功能（`selectRemove`）。
+  4. 调整 `settings`、`unsetSettings`、`leaders`、`defaultSearchEngine` 及 `overrides`。
+  5. 实时在“前后修改差异 (Profile Diff)”与“有效快捷键概览”中核验变化与有效键，确认无误后点击“保存到工作区”更新方案文件。
+
 交付更新后的实际文件、前后影响和执行过的验证结果。用户没有要求的父方案、扩展源码、来源 lock、上游和 private 文件保持不变；不自动部署或清理旧产物。

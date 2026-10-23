@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "upstream": {
+    "path": "../surfingkeys-conf",
+    "adapter": "b0o-v1"
+  },
+  "extensions": [
+    "./examples/basic/custom/notes"
+  ],
+  "profilesDir": "./profiles",
+  "outDir": "./dist"
+}
