@@ -2039,10 +2039,20 @@ npx skcb export-pages --out ./pages-dist</pre>
       }
     };
 
+    function resolveDesc(d, lang) {
+      if (!d) return "";
+      if (typeof d === "string") return d;
+      return d[lang] || d["zh-CN"] || d.en || Object.values(d)[0] || "";
+    }
+
+    function isCommonParent(ext) {
+      return ext === "./common.json" || ext === "common.json" || ext === "common";
+    }
+
     function getEffectiveFeatureIds() {
-      const inherited = state.profile.extends === "./common.json" ? COMMON_PARENT_FEATURES : [];
-      const combined = new Set([...inherited, ...state.profile.selectAdd]);
-      state.profile.selectRemove.forEach(id => combined.delete(id));
+      const inherited = isCommonParent(state.profile.extends) ? COMMON_PARENT_FEATURES : [];
+      const combined = new Set([...inherited, ...(state.profile.selectAdd || [])]);
+      (state.profile.selectRemove || []).forEach(id => combined.delete(id));
       return combined;
     }
 
@@ -2240,7 +2250,8 @@ npx skcb export-pages --out ./pages-dist</pre>
       const listEl = document.getElementById("catalog-cards-list");
       const suppressedMap = new Map(res.suppressedContribs.map(s => [s.fullId, s]));
       const winnerMap = new Map(res.activeContribs.filter(a => a.conflictWinner).map(a => [a.fullId, a]));
-      const inheritedSet = new Set(state.profile.extends === "./common.json" ? COMMON_PARENT_FEATURES : []);
+      const isExtendsCommon = isCommonParent(state.profile.extends);
+      const inheritedSet = new Set(isExtendsCommon ? COMMON_PARENT_FEATURES : []);
 
       const filtered = CATALOG.filter(f => {
         if (state.libFilter !== "all" && f.lib !== state.libFilter) return false;
@@ -2248,8 +2259,8 @@ npx skcb export-pages --out ./pages-dist</pre>
         if (state.searchQuery) {
           const q = state.searchQuery.toLowerCase();
           const matchId = f.id.toLowerCase().includes(q);
-          const matchDesc = (f.desc["zh-CN"] + f.desc.en).toLowerCase().includes(q);
-          const matchKey = f.contributions.some(c => c.alias.toLowerCase().includes(q) || (c.desc["zh-CN"] + c.desc.en).toLowerCase().includes(q));
+          const matchDesc = (resolveDesc(f.desc, "zh-CN") + resolveDesc(f.desc, "en")).toLowerCase().includes(q);
+          const matchKey = (f.contributions || []).some(c => (c.alias || "").toLowerCase().includes(q) || (resolveDesc(c.desc || c.description, "zh-CN") + resolveDesc(c.desc || c.description, "en")).toLowerCase().includes(q));
           return matchId || matchDesc || matchKey;
         }
         return true;
@@ -2267,33 +2278,34 @@ npx skcb export-pages --out ./pages-dist</pre>
         const isInherited = inheritedSet.has(f.id);
         const isExpanded = state.expandedCards.has(f.id);
 
-        const totalContribs = f.contributions.length;
-        const removedInCard = f.contributions.filter(c => state.profile.selectRemoveContributions.includes(`${f.id}#${c.id}`)).length;
-        const suppressedInCard = f.contributions.filter(c => suppressedMap.has(`${f.id}#${c.id}`)).length;
-        const winnerInCard = f.contributions.filter(c => winnerMap.has(`${f.id}#${c.id}`)).length;
+        const totalContribs = (f.contributions || []).length;
+        const removedInCard = (f.contributions || []).filter(c => (state.profile.selectRemoveContributions || []).includes(`${f.id}#${c.id}`)).length;
+        const suppressedInCard = (f.contributions || []).filter(c => suppressedMap.has(`${f.id}#${c.id}`)).length;
+        const winnerInCard = (f.contributions || []).filter(c => winnerMap.has(`${f.id}#${c.id}`)).length;
         const activeInCard = isSelected ? (totalContribs - removedInCard - suppressedInCard) : 0;
+        const pkgLabel = f.pkg || (f.lib ? `@skcb/lib-${f.lib}` : "@skcb/core");
 
         return `
           <div class="feature-card ${isSelected ? "selected" : ""}">
             <div class="feature-card-main">
               <div class="feature-card-info">
                 <div class="feature-title-row">
-                  <span class="badge ${libColorMap[f.lib] || "badge-secondary"}">${f.pkg}</span>
+                  <span class="badge ${libColorMap[f.lib] || "badge-secondary"}">${pkgLabel}</span>
                   <span class="feature-id">${f.id}</span>
                   ${f.domain ? `<span class="badge badge-secondary">🌐 ${f.domain}</span>` : ""}
                   ${isInherited ? `<span class="badge badge-amber">Inherited from ./common.json</span>` : ""}
                   ${winnerInCard > 0 ? `<span class="badge badge-amber" title="包含跨模组同键位胜出项">⚡ ${winnerInCard} 键覆盖他库</span>` : ""}
                   ${suppressedInCard > 0 ? `<span class="badge badge-rose" title="包含被高优先级模组替代的同名键">⚡ ${suppressedInCard} 键被替代</span>` : ""}
-                  ${f.secrets.length ? `<span class="badge badge-purple" title="Uses core.secretStorage (;ps)">🔐 ;ps (${f.secrets.join(", ")})</span>` : ""}
+                  ${f.secrets && f.secrets.length ? `<span class="badge badge-purple" title="Uses core.secretStorage (;ps)">🔐 ;ps (${f.secrets.join(", ")})</span>` : ""}
                 </div>
-                <div class="feature-desc">${f.desc[state.uiLang]}</div>
+                <div class="feature-desc">${resolveDesc(f.desc, state.uiLang)}</div>
                 <div class="feature-meta-row">
                   <button class="btn btn-outline btn-sm" onclick="toggleCardDrawer('${f.id}')">
                     <span>${isExpanded ? "▾" : "▸"}</span>
                     <span>${state.uiLang === "zh-CN" ? `细粒度按键定制 (${activeInCard}/${totalContribs} 生效)` : `Customize Keys (${activeInCard}/${totalContribs} effective)`}</span>
                   </button>
                   ${removedInCard > 0 ? `<span class="badge badge-rose">🚫 -${removedInCard} 单键已关</span>` : ""}
-                  ${f.capabilities.map(cap => `<span class="badge badge-secondary" style="font-weight:400;">⚙️ ${cap}</span>`).join("")}
+                  ${(f.capabilities || []).map(cap => `<span class="badge badge-secondary" style="font-weight:400;">⚙️ ${cap}</span>`).join("")}
                 </div>
               </div>
 
@@ -2313,9 +2325,9 @@ npx skcb export-pages --out ./pages-dist</pre>
                 </div>
                 <table class="contrib-table">
                   <tbody>
-                    ${f.contributions.map(c => {
+                    ${(f.contributions || []).map(c => {
                       const fullId = `${f.id}#${c.id}`;
-                      const isRemoved = state.profile.selectRemoveContributions.includes(fullId);
+                      const isRemoved = (state.profile.selectRemoveContributions || []).includes(fullId);
                       const suppressedInfo = suppressedMap.get(fullId);
                       const winnerInfo = winnerMap.get(fullId);
                       const isReplacedOpen = state.expandedCatalogReplaced.has(fullId);
@@ -2357,12 +2369,13 @@ npx skcb export-pages --out ./pages-dist</pre>
                         statusBadge = `<span class="badge badge-emerald">✓ 独有生效</span>`;
                       }
 
+                      const cDesc = resolveDesc(c.desc || c.description, state.profile.locale);
                       return `
                         <tr class="${rowClass}">
                           <td style="width: 135px;"><span class="${kbdClass}">${chord}</span></td>
                           <td style="width: 140px; font-family: var(--font-mono); color: hsl(var(--muted-foreground));">#${c.id}</td>
                           <td>
-                            <div>${c.desc[state.profile.locale] || c.desc.en}</div>
+                            <div>${cDesc}</div>
                             ${(winnerInfo && isReplacedOpen) ? `
                               <div class="contrib-inline-replaced-drawer">
                                 <div style="font-weight:600; color:hsl(var(--amber-fg));">
@@ -2373,7 +2386,7 @@ npx skcb export-pages --out ./pages-dist</pre>
                                     <span>
                                       <span class="badge badge-rose">被替代</span>
                                       <code style="margin:0 0.3rem;">${ov.fullId}</code>
-                                      <span style="color:hsl(var(--muted-foreground));">${ov.contrib.desc[state.profile.locale] || ov.contrib.desc.en}</span>
+                                      <span style="color:hsl(var(--muted-foreground));">${resolveDesc(ov.contrib.desc || ov.contrib.description, state.profile.locale)}</span>
                                     </span>
                                     <button class="btn btn-outline btn-xs" onclick="promoteOverriddenItem('${fullId}', '${ov.fullId}', event)">切换采用该项</button>
                                   </div>
@@ -2409,8 +2422,11 @@ npx skcb export-pages --out ./pages-dist</pre>
     };
 
     window.toggleFeature = function(featureId) {
-      const inherited = state.profile.extends === "./common.json" && COMMON_PARENT_FEATURES.includes(featureId);
+      const inherited = isCommonParent(state.profile.extends) && COMMON_PARENT_FEATURES.includes(featureId);
       const effective = getEffectiveFeatureIds();
+
+      state.profile.selectAdd = state.profile.selectAdd || [];
+      state.profile.selectRemove = state.profile.selectRemove || [];
 
       if (effective.has(featureId)) {
         state.profile.selectAdd = state.profile.selectAdd.filter(id => id !== featureId);
@@ -2427,6 +2443,7 @@ npx skcb export-pages --out ./pages-dist</pre>
     };
 
     window.toggleContribution = function(fullId) {
+      state.profile.selectRemoveContributions = state.profile.selectRemoveContributions || [];
       const idx = state.profile.selectRemoveContributions.indexOf(fullId);
       if (idx >= 0) {
         state.profile.selectRemoveContributions.splice(idx, 1);
@@ -2522,10 +2539,14 @@ npx skcb export-pages --out ./pages-dist</pre>
           ? `${state.profile.leaders.search}${c.alias} / c${state.profile.leaders.search}${c.alias}`
           : `${c.leaderFree ? "" : state.profile.leaders.site}${c.alias}`;
         const domainStr = c.domain || (c.kind === "search" ? "search omnibar" : "global");
-        const descStr = `${c.desc["zh-CN"]} ${c.desc.en} ${c.id} ${item.feature.id}`;
-        const overriddenMatch = (item.overriddenItems || []).some(ov =>
-          `${ov.fullId} ${ov.contrib.desc["zh-CN"]} ${ov.contrib.desc.en}`.toLowerCase().includes(q)
-        );
+        const cDescZh = resolveDesc(c.desc || c.description, "zh-CN");
+        const cDescEn = resolveDesc(c.desc || c.description, "en");
+        const descStr = `${cDescZh} ${cDescEn} ${c.id} ${item.feature.id}`;
+        const overriddenMatch = (item.overriddenItems || []).some(ov => {
+          const ovZh = resolveDesc(ov.contrib.desc || ov.contrib.description, "zh-CN");
+          const ovEn = resolveDesc(ov.contrib.desc || ov.contrib.description, "en");
+          return `${ov.fullId} ${ovZh} ${ovEn}`.toLowerCase().includes(q);
+        });
 
         return (
           chord.toLowerCase().includes(q) ||
@@ -2568,7 +2589,7 @@ npx skcb export-pages --out ./pages-dist</pre>
             const chord = c.kind === "search"
               ? `${state.profile.leaders.search}${c.alias} / c${state.profile.leaders.search}${c.alias}`
               : `${c.leaderFree ? "" : state.profile.leaders.site}${c.alias}`;
-            const rawDesc = c.desc[state.profile.locale] || c.desc.en;
+            const rawDesc = resolveDesc(c.desc || c.description, state.profile.locale);
 
             const hasOverridden = item.conflictWinner && item.overriddenItems && item.overriddenItems.length > 0;
             // Auto-expand if search query matches an overridden item or if user expanded this slot
@@ -2636,7 +2657,7 @@ npx skcb export-pages --out ./pages-dist</pre>
                       `}
                     </div>
                     ${item.overriddenItems.map(ov => {
-                      const ovDesc = ov.contrib.desc[state.profile.locale] || ov.contrib.desc.en;
+                      const ovDesc = resolveDesc(ov.contrib.desc || ov.contrib.description, state.profile.locale);
                       return `
                         <div class="keymap-overridden-row">
                           <div style="display: flex; align-items: center; gap: 0.4rem; min-width: 0;">
@@ -2693,7 +2714,7 @@ npx skcb export-pages --out ./pages-dist</pre>
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0; border-top: 1px dashed hsl(var(--border)); gap: 0.4rem;">
                   <div>
                     <code>${s.fullId}</code> <span class="kbd kbd-suppressed">${s.contrib.alias}</span>
-                    <div style="font-size: 11px; color: hsl(var(--muted-foreground));">${s.contrib.desc[state.profile.locale]}</div>
+                    <div style="font-size: 11px; color: hsl(var(--muted-foreground));">${resolveDesc(s.contrib.desc || s.contrib.description, state.profile.locale)}</div>
                   </div>
                   <div style="display:flex; align-items:center; gap:0.3rem; flex-shrink:0;">
                     <span class="badge badge-amber">被 ${s.suppressedBy} 替代</span>
@@ -2709,7 +2730,7 @@ npx skcb export-pages --out ./pages-dist</pre>
             ${res.removedContribs.length === 0 ? `<div style="color: hsl(var(--muted-foreground));">未剔除任何单键</div>` :
               res.removedContribs.map(r => `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; border-top: 1px dashed hsl(var(--border));">
-                  <code>${r.fullId} (${r.contrib.alias}: ${r.contrib.desc[state.profile.locale]})</code>
+                  <code>${r.fullId} (${r.contrib.alias}: ${resolveDesc(r.contrib.desc || r.contrib.description, state.profile.locale)})</code>
                   <button class="btn btn-outline btn-xs" onclick="toggleContribution('${r.fullId}')">恢复启用</button>
                 </div>
               `).join("")
@@ -2763,7 +2784,7 @@ npx skcb export-pages --out ./pages-dist</pre>
 
       res.activeContribs.slice(0, 12).forEach(item => {
         const c = item.contrib;
-        const desc = c.desc[loc] || c.desc.en;
+        const desc = resolveDesc(c.desc || c.description, loc);
         if (c.kind === "search") {
           lines.push(`  // Source: ${item.fullId}`);
           lines.push(`  api.addSearchAlias(${JSON.stringify(c.alias)}, ${JSON.stringify(c.name)}, "https://...", "s");`);
@@ -3087,23 +3108,40 @@ npx skcb export-pages --out ./pages-dist</pre>
             if (data.ok && data.catalog && Array.isArray(data.catalog.entries)) {
               let updated = false;
               data.catalog.entries.forEach(remoteEntry => {
-                const existing = CATALOG.find(e => e.id === remoteEntry.id);
+                const normalizedId = remoteEntry.id;
+                const b0oAlias = normalizedId.startsWith('upstream/') ? normalizedId.replace(/^upstream\//, 'b0o/') : normalizedId;
+                const existing = CATALOG.find(e => e.id === normalizedId || e.id === b0oAlias);
                 if (!existing) {
-                  const namespace = remoteEntry.id.split('/')[0] || 'custom';
-                  const localId = remoteEntry.id.split('/')[1] || remoteEntry.id;
+                  const namespace = normalizedId.split('/')[0] || 'custom';
+                  const localId = normalizedId.split('/')[1] || normalizedId;
                   const cat = localId.startsWith('actions.') ? 'actions' : localId.startsWith('search-engines.') ? 'search' : 'omnibar';
+                  const entryDesc = {
+                    'zh-CN': resolveDesc(remoteEntry.description || remoteEntry.desc, 'zh-CN') || normalizedId,
+                    'en': resolveDesc(remoteEntry.description || remoteEntry.desc, 'en') || normalizedId
+                  };
+                  const contributions = (remoteEntry.contributions || []).map(c => ({
+                    id: c.id,
+                    alias: c.alias || '',
+                    kind: c.kind || 'mapkey',
+                    domain: c.domain || 'global',
+                    leaderFree: !!c.leaderFree,
+                    callbackRequired: !!c.callbackRequired,
+                    desc: {
+                      'zh-CN': resolveDesc(c.description || c.desc, 'zh-CN') || c.id,
+                      'en': resolveDesc(c.description || c.desc, 'en') || c.id
+                    }
+                  }));
                   CATALOG.push({
-                    id: remoteEntry.id,
-                    lib: namespace,
+                    id: normalizedId,
+                    lib: namespace === 'upstream' ? 'b0o' : namespace,
+                    pkg: `@skcb/lib-${namespace === 'upstream' ? 'b0o' : namespace}`,
                     category: cat,
-                    domain: remoteEntry.contributions?.[0]?.domain || 'global',
-                    name: typeof remoteEntry.description === 'object' ? (remoteEntry.description['zh-CN'] || remoteEntry.description['en']) : (remoteEntry.description || remoteEntry.id),
-                    nameEn: typeof remoteEntry.description === 'object' ? (remoteEntry.description['en'] || remoteEntry.description['zh-CN']) : (remoteEntry.description || remoteEntry.id),
-                    desc: typeof remoteEntry.description === 'object' ? (remoteEntry.description['zh-CN'] || remoteEntry.description['en']) : (remoteEntry.description || remoteEntry.id),
-                    descEn: typeof remoteEntry.description === 'object' ? (remoteEntry.description['en'] || remoteEntry.description['zh-CN']) : (remoteEntry.description || remoteEntry.id),
+                    domain: contributions[0]?.domain || 'global',
+                    desc: entryDesc,
                     capabilities: remoteEntry.capabilities || [],
                     requires: remoteEntry.requires || [],
-                    contributions: remoteEntry.contributions || []
+                    secrets: remoteEntry.secrets || [],
+                    contributions: contributions
                   });
                   updated = true;
                 }
