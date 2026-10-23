@@ -2,11 +2,12 @@
 # ==============================================================================
 # SurfingKeys Config Builder (skcb) Interactive Project Initializer
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/b0o/surfingkeys-conf-builder/main/scripts/init.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/dearrrfish/surfingkeys-conf-builder/main/scripts/init.sh | bash
 #   ./scripts/init.sh [--dir <path>] [--type proj|lib] [--ui|--no-ui] [--libs <csv>] [--skills|--no-skills] [--pm pnpm|npm|bun] [--yes] [--dry-run]
 # ==============================================================================
 set -euo pipefail
 
+REPO_SLUG="${SKCB_REPO:-dearrrfish/surfingkeys-conf-builder}"
 TARGET_DIR="my-surfingkeys-config"
 PROJECT_TYPE="proj"
 INCLUDE_UI=true
@@ -177,14 +178,14 @@ if [[ "$PROJECT_TYPE" == "lib" ]]; then
   if [[ -d "$TEMPLATE_LIB" ]]; then
     cp -r "$TEMPLATE_LIB/." "$TMP_DIR/"
   else
-    npx -y degit "b0o/surfingkeys-conf-builder/templates/skcb-lib-repo" "$TMP_DIR"
+    npx -y degit "$REPO_SLUG/templates/skcb-lib-repo" "$TMP_DIR"
   fi
 else
   echo -e "\n🚀 Generating configuration project workspace..."
   if [[ -d "$TEMPLATE_PROJ" ]]; then
     cp -r "$TEMPLATE_PROJ/." "$TMP_DIR/"
   else
-    npx -y degit "b0o/surfingkeys-conf-builder/templates/skcb-proj-repo" "$TMP_DIR"
+    npx -y degit "$REPO_SLUG/templates/skcb-proj-repo" "$TMP_DIR"
   fi
 
   # Tailor workspace libraries in surfingkeys.workspace.json
@@ -214,9 +215,13 @@ else
 EOF
 
   # Copy skills if requested
-  if [[ "$INCLUDE_SKILLS" == "true" && -d "$REPO_ROOT/skills" ]]; then
+  if [[ "$INCLUDE_SKILLS" == "true" ]]; then
     mkdir -p "$TMP_DIR/skills"
-    cp -r "$REPO_ROOT/skills/." "$TMP_DIR/skills/"
+    if [[ -d "$REPO_ROOT/skills" ]]; then
+      cp -r "$REPO_ROOT/skills/." "$TMP_DIR/skills/"
+    else
+      npx -y degit "$REPO_SLUG/skills" "$TMP_DIR/skills" || true
+    fi
   fi
 fi
 
