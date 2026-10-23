@@ -34,5 +34,8 @@
     "youtube": "YouTube 视频搜索",
     "reddit": "Reddit 社区搜索",
     "stackoverflow": "StackOverflow 问答搜索"
+  },
+  "omnibar": {
+    "history": "打开历史记录快速检索"
   }
 }

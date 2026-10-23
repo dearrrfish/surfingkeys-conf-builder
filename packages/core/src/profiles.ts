@@ -151,6 +151,12 @@ export async function resolveProfile(ctx: Context, id: string, catalog: Catalog)
       result.leaders[key as 'site' | 'search'] = value;
       result.provenance[`leaders.${key}`] = origin;
     }
+    if (p.keybindings) {
+      result.keybindings = {...(result.keybindings ?? {}), ...p.keybindings};
+      for (const k of Object.keys(p.keybindings)) {
+        result.provenance[`keybindings.${k}`] = origin;
+      }
+    }
     if (p.overrides) {
       result.overrides = p.overrides;
       result.provenance.overrides = origin;
@@ -166,7 +172,14 @@ export async function resolveProfile(ctx: Context, id: string, catalog: Catalog)
 
 export function explain(profile: EffectiveProfile, catalog: Catalog): unknown {
   const selected = selection(profile.select, catalog);
-  const unremovedContribs = selected.contributions.filter(c => !profile.selectRemoveContributions.includes(c.id));
+  const unremovedContribs = selected.contributions
+    .filter(c => !profile.selectRemoveContributions.includes(c.id))
+    .map(c => {
+      if (profile.keybindings && profile.keybindings[c.id]) {
+        return {...c, alias: profile.keybindings[c.id]};
+      }
+      return c;
+    });
   const index = new Map(unremovedContribs.map(c => [c.id, c]));
   const targets = new Set<string>();
   const replacements = new Set<string>();

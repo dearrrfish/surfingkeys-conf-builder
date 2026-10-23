@@ -50,6 +50,9 @@ test('wave2: generated lib-b0o selective.json satisfies manifest schema', async 
   assert.ok(selective.entries['actions.github']);
   assert.ok(selective.entries['search-engines.ddg']);
   assert.ok(selective.entries['search-engines.google']);
+  assert.ok(selective.entries['omnibar.history']);
+  assert.equal(selective.entries['omnibar.history'].contributions[0].alias, 'oh');
+  assert.equal(selective.entries['omnibar.history'].contributions[0].kind, 'omnibar');
 
   // Check bilingual description
   const amazon = selective.entries['actions.amazon'];

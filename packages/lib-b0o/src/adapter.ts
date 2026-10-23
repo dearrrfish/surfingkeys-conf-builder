@@ -127,6 +127,7 @@ export async function buildB0oAdapter(options: AdapterOptions = {}): Promise<voi
 
   await mkdir(path.join(outputDir, 'actions'), {recursive: true});
   await mkdir(path.join(outputDir, 'search-engines'), {recursive: true});
+  await mkdir(path.join(outputDir, 'omnibar'), {recursive: true});
   await mkdir(path.join(outputDir, 'shared'), {recursive: true});
 
   // 1. Load locales
@@ -221,7 +222,8 @@ export async function buildB0oAdapter(options: AdapterOptions = {}): Promise<voi
   // 12. Generate Action modules for all domains in keysDef.maps
   const doiDomains: string[] = [];
 
-  for (const [domain, list] of Object.entries<any[]>(keysDef.maps)) {
+  for (const [domain, rawList] of Object.entries<any[]>(keysDef.maps)) {
+    const list = domain === 'global' ? rawList.filter(m => m.alias !== 'oh') : rawList;
     const isDoi = list.length === 1 && list[0].alias === 'O' && list[0].description === 'Open DOI';
     if (isDoi) {
       doiDomains.push(domain);
@@ -486,10 +488,41 @@ export default () => ({
         'zh-CN': `${zhName} 搜索引擎扩展`
       },
       requires: [],
-      capabilities: [],
+      capabilities: ['core.omnibar'],
       contributions: [contrib]
     };
   }
+
+  // 14.1. Generate Omnibar module for history
+  const omnibarHistoryJs = `export default () => ({
+  callbacks: {
+    'history': () => (typeof Front !== 'undefined' ? Front.openOmnibar({ type: 'History' }) : null)
+  }
+});
+`;
+  await writeFile(path.join(outputDir, 'omnibar/history.js'), omnibarHistoryJs, 'utf8');
+
+  entries['omnibar.history'] = {
+    entry: 'omnibar/history.js',
+    description: {
+      en: 'Open URL from history Omnibar interface',
+      'zh-CN': '快速检索并打开历史记录 URL (Omnibar)'
+    },
+    requires: [],
+    capabilities: ['core.omnibar'],
+    contributions: [
+      {
+        id: 'history',
+        alias: 'oh',
+        description: {
+          en: 'Open URL from history',
+          'zh-CN': zhLocales.omnibar?.history || '打开历史记录快速检索'
+        },
+        kind: 'omnibar',
+        callbackRequired: true
+      }
+    ]
+  };
 
   // 15. Generate and Validate selective.json against Schema
   const selective = {

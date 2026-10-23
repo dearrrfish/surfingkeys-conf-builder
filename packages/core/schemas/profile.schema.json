@@ -100,6 +100,16 @@
       "required": [],
       "additionalProperties": false
     },
+    "keybindings": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^(?:upstream|[a-z][a-z0-9_]*)/(?:actions|search-engines|omnibar|utils)\\.[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
     "overrides": {
       "type": "array",
       "items": {

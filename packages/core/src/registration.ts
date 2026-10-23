@@ -4,8 +4,8 @@ export type ActiveContribution=Contribution&{featureId:string};
 export interface Registration {id:string;featureId:string;kind:Contribution['kind'];keys:string[];domain:string;pattern?:string;contribution:ActiveContribution}
 const escape=(s:string)=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 export function registration(c:ActiveContribution,p:EffectiveProfile):Registration {
- const domain=c.kind!=='mapkey'?'global':c.domain??'global';
- const keys=c.kind==='search'?[`${p.leaders.search}${c.alias}`,`c${p.leaders.search}${c.alias}`]:[`${c.kind==='mapkey'?(c.leader??(domain==='global'?'':p.leaders.site)):''}${c.alias}`];
+ const domain=(c.kind!=='mapkey'&&c.kind!=='omnibar')?'global':c.domain??'global';
+ const keys=c.kind==='search'?[`${p.leaders.search}${c.alias}`,`c${p.leaders.search}${c.alias}`]:[`${(c.kind==='mapkey'||c.kind==='omnibar')?(c.leader??(domain==='global'?'':p.leaders.site)):''}${c.alias}`];
  return {id:c.id,featureId:c.featureId,kind:c.kind,keys,domain,...(domain!=='global'?{pattern:`^https?://(?:[a-zA-Z0-9-]+\\.)*${escape(domain)}(?::[0-9]+)?(?=[/?#]|$)${c.path?`(?:${c.path})`:''}`} :{}),contribution:c};
 }
 export function overlaps(a:Registration,b:Registration):boolean {return a.domain==='global'||b.domain==='global'||a.domain===b.domain||a.domain.endsWith(`.${b.domain}`)||b.domain.endsWith(`.${a.domain}`);}

@@ -41,6 +41,7 @@ export interface Profile {
   settings?: Record<string, unknown>;
   unsetSettings?: string[];
   leaders?: { site?: string; search?: string };
+  keybindings?: Record<string, string>;
   overrides?: Override[];
 }
 
@@ -110,6 +111,7 @@ export interface EffectiveProfile {
   };
   settings: Record<string, unknown>;
   leaders: { site: string; search: string };
+  keybindings?: Record<string, string>;
   overrides: Override[];
   provenance: Record<string, string>;
 }

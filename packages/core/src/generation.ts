@@ -239,7 +239,7 @@ export default getApi();\n`;
     if (c.kind === 'map') {
       return `api.map(${JSON.stringify(r.keys[0])},${JSON.stringify(c.target)});`;
     }
-    if (c.kind === 'mapkey') {
+    if (c.kind === 'mapkey' || c.kind === 'omnibar') {
       return `api.mapkey(${JSON.stringify(r.keys[0])},${JSON.stringify(desc)},${callback},${opts});`;
     }
     return `api.addSearchAlias(${JSON.stringify(c.alias)},${JSON.stringify(c.name)},${JSON.stringify(c.search)},"",${JSON.stringify(c.compl ?? '')},${callback},undefined,{favicon_url:${JSON.stringify(c.favicon ?? '')},skipMaps:true});\napi.mapkey(${JSON.stringify(r.keys[0])},${JSON.stringify(desc || c.name || '')},()=>api.Front.openOmnibar({type:'SearchEngine',extra:${JSON.stringify(c.alias)}}));\napi.mapkey(${JSON.stringify(r.keys[1])},${JSON.stringify(desc || c.name || '')},()=>api.Clipboard.read(c=>api.Front.openOmnibar({type:'SearchEngine',pref:c.data,extra:${JSON.stringify(c.alias)}})));`;

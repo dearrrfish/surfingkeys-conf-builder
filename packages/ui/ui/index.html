@@ -364,7 +364,25 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      height: calc(100vh - 84px);
       max-height: calc(100vh - 84px);
+      overflow: hidden;
+    }
+
+    .right-column > .card {
+      height: 100%;
+      max-height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .right-column .card-content {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     /* shadcn Card */
@@ -808,9 +826,46 @@
     }
 
     .inspector-scroll {
-      max-height: calc(100vh - 320px);
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
-      padding-right: 3px;
+      padding-right: 4px;
+      padding-bottom: 2.5rem;
+    }
+
+    /* Catalog Grouping Headers (Hierarchy & Flat Views) */
+    .catalog-group-lib-header {
+      margin: 1.25rem 0 0.5rem;
+      padding-bottom: 0.45rem;
+      border-bottom: 2px solid hsl(var(--border));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .catalog-group-domain-header {
+      margin: 0.75rem 0 0.35rem;
+      padding: 0.35rem 0.6rem;
+      background: hsl(var(--muted) / 0.45);
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 600;
+      color: hsl(var(--foreground));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .catalog-group-cat-header {
+      margin: 0.45rem 0 0.25rem 0.5rem;
+      font-size: 11px;
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .view-mode-toggle button.active {
+      background-color: hsl(var(--primary)) !important;
+      color: hsl(var(--primary-foreground)) !important;
     }
 
     /* Keymap Filter Toolbar inside Effective Keymaps Tab */
@@ -1254,15 +1309,15 @@
             <div class="catalog-toolbar">
               <div class="catalog-filter-row">
                 <div class="lib-pills" id="lib-filter-pills">
-                  <button class="lib-pill active" data-lib="all">All Libraries (13)</button>
-                  <button class="lib-pill" data-lib="ent">🎬 @skcb/lib-ent (4)</button>
-                  <button class="lib-pill" data-lib="tech">💻 @skcb/lib-tech (4)</button>
-                  <button class="lib-pill" data-lib="prod">⚡ @skcb/lib-prod (3)</button>
-                  <button class="lib-pill" data-lib="b0o">📦 @skcb/lib-b0o (4)</button>
+                  <!-- Dynamically populated by renderLibPills() -->
                 </div>
 
                 <div style="display: flex; gap: 0.4rem; align-items: center;">
-                  <input type="search" id="catalog-search-input" class="input" style="width: 230px;" placeholder="🔍 过滤模组库卡片 / 域名 / 按键..." />
+                  <div class="view-mode-toggle" style="display: inline-flex; border: 1px solid hsl(var(--border)); border-radius: var(--radius); overflow: hidden; background: hsl(var(--muted) / 0.5);">
+                    <button class="btn btn-xs active" id="btn-view-hierarchy" title="层级视图 (Lib优先级 -> 站点 -> 类型)" style="border-radius: 0; border: none; padding: 0.25rem 0.55rem; font-size: 11.5px;">🌳 层级</button>
+                    <button class="btn btn-xs" id="btn-view-flat" title="平铺视图 (站点 -> 类型)" style="border-radius: 0; border: none; padding: 0.25rem 0.55rem; font-size: 11.5px;">📄 平铺</button>
+                  </div>
+                  <input type="search" id="catalog-search-input" class="input" style="width: 210px;" placeholder="🔍 过滤模组库卡片 / 域名 / 按键..." />
                 </div>
               </div>
 
@@ -1466,7 +1521,7 @@ npx skcb export-pages --out ./pages-dist</pre>
           </div>
 
           <!-- Sub-Tab 1: Effective Keymaps Overview (WITH Quick Filter + Conflict Highlight + Collapsible Overridden Items) -->
-          <div id="instab-panel-keymaps" style="display: flex; flex-direction: column;">
+          <div id="instab-panel-keymaps" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
             <!-- Sticky Filter Bar inside Effective Keymaps -->
             <div class="keymap-filter-bar">
               <div style="display: flex; gap: 0.4rem; align-items: center;">
@@ -1945,8 +2000,10 @@ npx skcb export-pages --out ./pages-dist</pre>
       topMode: "builder", // "builder" | "secrets" | "server"
       libFilter: "all",
       catFilter: "all",
+      viewMode: "hierarchy", // "hierarchy" | "flat"
       searchQuery: "",
       inspectorTab: "keymaps",
+      editingKeybinding: null, // fullId of keybinding currently being edited
 
       // Effective Keymaps Filter & Collapsible Overridden Items State
       keymapSearchQuery: "",
@@ -1986,7 +2043,8 @@ npx skcb export-pages --out ./pages-dist</pre>
         settings: {
           defaultSearchEngine: "du"
         },
-        overrides: []
+        overrides: [],
+        keybindings: {}
       }
     };
 
@@ -2007,7 +2065,8 @@ npx skcb export-pages --out ./pages-dist</pre>
         ],
         selectRemoveContributions: ["b0o/actions.github#notifications"],
         conflictMode: "module-precedence",
-        defaultSearch: "du"
+        defaultSearch: "du",
+        keybindings: {}
       },
       work: {
         id: "work",
@@ -2025,7 +2084,8 @@ npx skcb export-pages --out ./pages-dist</pre>
         ],
         selectRemoveContributions: [],
         conflictMode: "module-precedence",
-        defaultSearch: "sx"
+        defaultSearch: "sx",
+        keybindings: {}
       },
       common: {
         id: "common",
@@ -2035,7 +2095,8 @@ npx skcb export-pages --out ./pages-dist</pre>
         selectAdd: ["b0o/search-engines.ddg"],
         selectRemoveContributions: [],
         conflictMode: "strict",
-        defaultSearch: "du"
+        defaultSearch: "du",
+        keybindings: {}
       }
     };
 
@@ -2074,11 +2135,16 @@ npx skcb export-pages --out ./pages-dist</pre>
             removedContribs.push({ feature, contrib, fullId });
             return;
           }
-          const slotKey = contrib.kind === "search"
-            ? `search:${contrib.alias}`
-            : `key:${contrib.domain || "global"}:${contrib.leaderFree ? "" : state.profile.leaders.site}${contrib.alias}`;
+          const customAlias = state.profile.keybindings && state.profile.keybindings[fullId];
+          const effectiveAlias = customAlias !== undefined ? customAlias : contrib.alias;
+          const effectiveContrib = customAlias !== undefined
+            ? { ...contrib, alias: effectiveAlias, defaultAlias: contrib.alias, isCustomKeybinding: true }
+            : { ...contrib, defaultAlias: contrib.alias };
+          const slotKey = effectiveContrib.kind === "search"
+            ? `search:${effectiveContrib.alias}`
+            : `key:${effectiveContrib.domain || "global"}:${effectiveContrib.leaderFree ? "" : state.profile.leaders.site}${effectiveContrib.alias}`;
           if (!bySlot.has(slotKey)) bySlot.set(slotKey, []);
-          bySlot.get(slotKey).push({ feature, contrib, fullId, slotKey });
+          bySlot.get(slotKey).push({ feature, contrib: effectiveContrib, fullId, slotKey, isCustomKeybinding: Boolean(customAlias) });
         });
       });
 
@@ -2212,6 +2278,130 @@ npx skcb export-pages --out ./pages-dist</pre>
       renderCatalog();
     };
 
+    // Keybinding custom inline editor & real-time conflict gate
+    window.startEditKeybinding = function(fullId, event) {
+      if (event) event.stopPropagation();
+      state.editingKeybinding = fullId;
+      renderInspector();
+      setTimeout(() => {
+        const input = document.getElementById("input-edit-alias");
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }, 50);
+    };
+
+    window.cancelKeybindingEdit = function(event) {
+      if (event) event.stopPropagation();
+      state.editingKeybinding = null;
+      renderInspector();
+    };
+
+    window.checkKeybindingConflict = function(targetFullId, newAlias, domain, kind, leaderFree) {
+      if (!newAlias || !newAlias.trim()) {
+        return { valid: false, message: state.uiLang === "zh-CN" ? "按键别名不能为空" : "Alias cannot be empty" };
+      }
+      const trimmed = newAlias.trim();
+
+      // Determine candidate slotKey
+      const candidateSlot = kind === "search"
+        ? `search:${trimmed}`
+        : `key:${domain || "global"}:${leaderFree ? "" : state.profile.leaders.site}${trimmed}`;
+
+      // Search all other active contributions in the profile
+      const res = computeResolution();
+      const conflictItem = res.activeContribs.find(item => {
+        if (item.fullId === targetFullId) return false;
+        const c = item.contrib;
+        const effectiveAlias = (state.profile.keybindings && state.profile.keybindings[item.fullId]) !== undefined
+          ? state.profile.keybindings[item.fullId]
+          : c.alias;
+        const otherSlot = c.kind === "search"
+          ? `search:${effectiveAlias}`
+          : `key:${c.domain || "global"}:${c.leaderFree ? "" : state.profile.leaders.site}${effectiveAlias}`;
+        return otherSlot === candidateSlot;
+      });
+
+      if (conflictItem) {
+        const otherDesc = resolveDesc(conflictItem.contrib.desc || conflictItem.contrib.description, state.profile.locale);
+        return {
+          valid: false,
+          conflictWith: conflictItem,
+          message: state.uiLang === "zh-CN"
+            ? `🚨 键位冲突门禁拦截：别名 "${trimmed}" 在 [${domain || 'global'}] 作用域下已被 "${conflictItem.fullId}" (${otherDesc}) 占用！请修改别名。`
+            : `🚨 Conflict Gate Intercepted: Chord "${trimmed}" in scope [${domain || 'global'}] is already occupied by "${conflictItem.fullId}" (${otherDesc})!`
+        };
+      }
+
+      const chordDisplay = kind === "search"
+        ? `${state.profile.leaders.search}${trimmed}`
+        : `${leaderFree ? "" : state.profile.leaders.site}${trimmed}`;
+
+      return {
+        valid: true,
+        message: state.uiLang === "zh-CN"
+          ? `✓ 键位可用：${chordDisplay} 无同名冲突，可安全保存`
+          : `✓ Chord available: ${chordDisplay} (no conflict)`
+      };
+    };
+
+    window.handleKeybindingInput = function(targetFullId, domain, kind, leaderFree) {
+      const input = document.getElementById("input-edit-alias");
+      const feedback = document.getElementById("keybinding-gate-feedback");
+      const saveBtn = document.getElementById("btn-save-keybinding");
+      if (!input || !feedback || !saveBtn) return;
+
+      const check = checkKeybindingConflict(targetFullId, input.value, domain, kind, leaderFree);
+      feedback.style.display = "block";
+      if (!check.valid) {
+        feedback.style.color = "hsl(var(--rose-fg))";
+        feedback.textContent = check.message;
+        saveBtn.disabled = true;
+      } else {
+        feedback.style.color = "hsl(var(--emerald-fg))";
+        feedback.textContent = check.message;
+        saveBtn.disabled = false;
+      }
+    };
+
+    window.saveKeybindingEdit = function(targetFullId, domain, kind, leaderFree, event) {
+      if (event) event.stopPropagation();
+      const input = document.getElementById("input-edit-alias");
+      if (!input) return;
+      const check = checkKeybindingConflict(targetFullId, input.value, domain, kind, leaderFree);
+      if (!check.valid) {
+        alert(check.message);
+        return;
+      }
+      state.profile.keybindings = state.profile.keybindings || {};
+      state.profile.keybindings[targetFullId] = input.value.trim();
+      state.editingKeybinding = null;
+      renderAll();
+      syncProfileToServer();
+      showToast(state.uiLang === "zh-CN" ? `✅ 快捷键已自定义为 ${input.value.trim()}` : `✅ Keybinding updated to ${input.value.trim()}`);
+    };
+
+    window.resetKeybinding = function(targetFullId, event) {
+      if (event) event.stopPropagation();
+      if (state.profile.keybindings && state.profile.keybindings[targetFullId] !== undefined) {
+        delete state.profile.keybindings[targetFullId];
+        state.editingKeybinding = null;
+        renderAll();
+        syncProfileToServer();
+        showToast(state.uiLang === "zh-CN" ? "✅ 快捷键已恢复默认值" : "✅ Restored default keybinding");
+      }
+    };
+
+    window.syncProfileToServer = function() {
+      if (!window.location.protocol.startsWith('http')) return;
+      fetch('/api/profiles/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state.profile)
+      }).catch(() => {});
+    };
+
     // Render Module Precedence Pills
     function renderPrecedenceBar() {
       const container = document.getElementById("precedence-pills");
@@ -2244,7 +2434,211 @@ npx skcb export-pages --out ./pages-dist</pre>
       renderAll();
     };
 
-    // Render Feature Catalog Cards & Contribution Accordions (with Conflict Color Highlighting & Collapsible Replaced Options)
+    // Dynamically render Lib Filter Pills based on CATALOG contents
+    function renderLibPills() {
+      const pillsContainer = document.getElementById("lib-filter-pills");
+      if (!pillsContainer) return;
+
+      const libCounts = new Map();
+      CATALOG.forEach(f => {
+        const lib = f.lib || "other";
+        libCounts.set(lib, (libCounts.get(lib) || 0) + 1);
+      });
+
+      const libIconMap = {
+        ent: "🎬 @skcb/lib-ent",
+        tech: "💻 @skcb/lib-tech",
+        prod: "⚡ @skcb/lib-prod",
+        b0o: "📦 @skcb/lib-b0o"
+      };
+
+      const precedence = (state.profile.conflictResolution && state.profile.conflictResolution.modulePrecedence) || ["tech", "ent", "prod", "b0o"];
+      const allLibs = Array.from(libCounts.keys());
+      const sortedLibs = [
+        ...precedence.filter(l => allLibs.includes(l)),
+        ...allLibs.filter(l => !precedence.includes(l)).sort()
+      ];
+
+      let html = `
+        <button class="lib-pill ${state.libFilter === "all" ? "active" : ""}" data-lib="all">
+          All Libraries (${CATALOG.length})
+        </button>
+      `;
+
+      sortedLibs.forEach(lib => {
+        const count = libCounts.get(lib);
+        const label = libIconMap[lib] || `🧩 @skcb/lib-${lib}`;
+        const isActive = state.libFilter === lib ? "active" : "";
+        html += `
+          <button class="lib-pill ${isActive}" data-lib="${lib}">
+            ${label} (${count})
+          </button>
+        `;
+      });
+
+      pillsContainer.innerHTML = html;
+
+      pillsContainer.querySelectorAll(".lib-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+          state.libFilter = pill.getAttribute("data-lib");
+          pillsContainer.querySelectorAll(".lib-pill").forEach(p => p.classList.toggle("active", p === pill));
+          renderCatalog();
+        });
+      });
+    }
+
+    // Render a single feature card HTML
+    function renderFeatureCard(f, res, suppressedMap, winnerMap, inheritedSet) {
+      const isSelected = res.effectiveFeatures.has(f.id);
+      const isInherited = inheritedSet.has(f.id);
+      const isExpanded = state.expandedCards.has(f.id);
+
+      const totalContribs = (f.contributions || []).length;
+      const removedInCard = (f.contributions || []).filter(c => (state.profile.selectRemoveContributions || []).includes(`${f.id}#${c.id}`)).length;
+      const suppressedInCard = (f.contributions || []).filter(c => suppressedMap.has(`${f.id}#${c.id}`)).length;
+      const winnerInCard = (f.contributions || []).filter(c => winnerMap.has(`${f.id}#${c.id}`)).length;
+      const activeInCard = isSelected ? (totalContribs - removedInCard - suppressedInCard) : 0;
+      const pkgLabel = f.pkg || (f.lib ? `@skcb/lib-${f.lib}` : "@skcb/core");
+
+      const libColorMap = {
+        ent: "badge-emerald",
+        tech: "badge-blue",
+        prod: "badge-purple",
+        b0o: "badge-secondary"
+      };
+
+      return `
+        <div class="feature-card ${isSelected ? "selected" : ""}">
+          <div class="feature-card-main">
+            <div class="feature-card-info">
+              <div class="feature-title-row">
+                <span class="badge ${libColorMap[f.lib] || "badge-secondary"}">${pkgLabel}</span>
+                <span class="feature-id">${f.id}</span>
+                ${f.domain ? `<span class="badge badge-secondary">🌐 ${f.domain}</span>` : ""}
+                ${isInherited ? `<span class="badge badge-amber">Inherited from ./common.json</span>` : ""}
+                ${winnerInCard > 0 ? `<span class="badge badge-amber" title="包含跨模组同键位胜出项">⚡ ${winnerInCard} 键覆盖他库</span>` : ""}
+                ${suppressedInCard > 0 ? `<span class="badge badge-rose" title="包含被高优先级模组替代的同名键">⚡ ${suppressedInCard} 键被替代</span>` : ""}
+                ${f.secrets && f.secrets.length ? `<span class="badge badge-purple" title="Uses core.secretStorage (;ps)">🔐 ;ps (${f.secrets.join(", ")})</span>` : ""}
+              </div>
+              <div class="feature-desc">${resolveDesc(f.desc, state.uiLang)}</div>
+              <div class="feature-meta-row">
+                <button class="btn btn-outline btn-sm" onclick="toggleCardDrawer('${f.id}')">
+                  <span>${isExpanded ? "▾" : "▸"}</span>
+                  <span>${state.uiLang === "zh-CN" ? `细粒度按键定制 (${activeInCard}/${totalContribs} 生效)` : `Customize Keys (${activeInCard}/${totalContribs} effective)`}</span>
+                </button>
+                ${removedInCard > 0 ? `<span class="badge badge-rose">🚫 -${removedInCard} 单键已关</span>` : ""}
+                ${(f.capabilities || []).map(cap => `<span class="badge badge-secondary" style="font-weight:400;">⚙️ ${cap}</span>`).join("")}
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;">
+              <button type="button" class="switch" role="switch" aria-checked="${isSelected}" onclick="toggleFeature('${f.id}')" title="Enable / Disable Module">
+                <span class="switch-thumb"></span>
+              </button>
+              <span style="font-size: 11px; color: hsl(var(--muted-foreground));">${isSelected ? (state.uiLang === "zh-CN" ? "已启用" : "Enabled") : (state.uiLang === "zh-CN" ? "未启用" : "Disabled")}</span>
+            </div>
+          </div>
+
+          ${isExpanded ? `
+            <div class="contrib-drawer">
+              <div class="contrib-drawer-header">
+                <span>🎹 <strong>${f.id}</strong> — ${state.uiLang === "zh-CN" ? "单项开关与冲突色标（琥珀色=冲突胜出并可展开被替代项；玫红虚线=被高优库覆盖）" : "Per-Key Toggles & Conflict Highlights"}</span>
+                <span>${state.uiLang === "zh-CN" ? "目标注释语言" : "Target Locale"}: <code>${state.profile.locale}</code></span>
+              </div>
+              <table class="contrib-table">
+                <tbody>
+                  ${(f.contributions || []).map(c => {
+                    const fullId = `${f.id}#${c.id}`;
+                    const isRemoved = (state.profile.selectRemoveContributions || []).includes(fullId);
+                    const customAlias = state.profile.keybindings && state.profile.keybindings[fullId];
+                    const effectiveAlias = customAlias !== undefined ? customAlias : c.alias;
+                    const suppressedInfo = suppressedMap.get(fullId);
+                    const winnerInfo = winnerMap.get(fullId);
+                    const isReplacedOpen = state.expandedCatalogReplaced.has(fullId);
+                    const chord = c.kind === "search"
+                      ? `${state.profile.leaders.search}${effectiveAlias} / c${state.profile.leaders.search}${effectiveAlias}`
+                      : `${c.leaderFree ? "" : state.profile.leaders.site}${effectiveAlias}`;
+
+                    let rowClass = "";
+                    let kbdClass = "kbd";
+                    if (isRemoved || !isSelected) {
+                      rowClass = "contrib-row-removed";
+                    } else if (winnerInfo) {
+                      rowClass = "contrib-row-winner";
+                      kbdClass = winnerInfo.strictConflict ? "kbd kbd-conflict-strict" : "kbd kbd-conflict-winner";
+                    } else if (suppressedInfo) {
+                      rowClass = "contrib-row-suppressed";
+                      kbdClass = "kbd kbd-suppressed";
+                    }
+
+                    let statusBadge = "";
+                    if (!isSelected) {
+                      statusBadge = `<span class="badge badge-secondary">${state.uiLang === "zh-CN" ? "模组未选" : "Module Off"}</span>`;
+                    } else if (isRemoved) {
+                      statusBadge = `<span class="badge badge-rose">🚫 已单键剔除</span>`;
+                    } else if (winnerInfo) {
+                      statusBadge = `
+                        <button class="btn btn-xs badge-amber" style="cursor:pointer;" onclick="toggleCatalogReplaced('${fullId}', event)" title="点击展开/收起被此按键替代的同名选项">
+                          ⚡ ${state.uiLang === "zh-CN" ? `冲突胜出 · 已替代 ${winnerInfo.overriddenCount} 项` : `Won · Replaced ${winnerInfo.overriddenCount}`} ${isReplacedOpen ? "▴" : "▾"}
+                        </button>
+                      `;
+                    } else if (suppressedInfo) {
+                      statusBadge = `
+                        <span style="display:inline-flex; align-items:center; gap:0.3rem;">
+                          <span class="badge badge-rose">⚡ 被 ${suppressedInfo.suppressedBy} 替代</span>
+                          <button class="btn btn-outline btn-xs" onclick="promoteOverriddenItem('${suppressedInfo.suppressedBy}', '${fullId}', event)" title="一键写入 overrides 改用此项">改用此项</button>
+                        </span>
+                      `;
+                    } else {
+                      statusBadge = `<span class="badge badge-emerald">✓ 独有生效</span>`;
+                    }
+
+                    const cDesc = resolveDesc(c.desc || c.description, state.profile.locale);
+                    return `
+                      <tr class="${rowClass}">
+                        <td style="width: 145px;">
+                          <span class="${kbdClass}">${chord}</span>
+                          ${customAlias !== undefined ? `<span class="badge badge-purple" style="margin-left: 2px;" title="自定义按键别名: ${customAlias}">自定义</span>` : ""}
+                        </td>
+                        <td style="width: 140px; font-family: var(--font-mono); color: hsl(var(--muted-foreground));">#${c.id}</td>
+                        <td>
+                          <div>${cDesc}</div>
+                          ${(winnerInfo && isReplacedOpen) ? `
+                            <div class="contrib-inline-replaced-drawer">
+                              <div style="font-weight:600; color:hsl(var(--amber-fg));">
+                                ↳ ${state.uiLang === "zh-CN" ? "被此按键覆盖/替代的同键位选项：" : "Overridden / Replaced alternative(s):"}
+                              </div>
+                              ${winnerInfo.overriddenItems.map(ov => `
+                                <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding-top:0.15rem;">
+                                  <span>
+                                    <span class="badge badge-rose">被替代</span>
+                                    <code style="margin:0 0.3rem;">${ov.fullId}</code>
+                                    <span style="color:hsl(var(--muted-foreground));">${resolveDesc(ov.contrib.desc || ov.contrib.description, state.profile.locale)}</span>
+                                  </span>
+                                  <button class="btn btn-outline btn-xs" onclick="promoteOverriddenItem('${fullId}', '${ov.fullId}', event)">切换采用该项</button>
+                                </div>
+                              `).join("")}
+                            </div>
+                          ` : ""}
+                        </td>
+                        <td style="text-align: right;">${statusBadge}</td>
+                        <td style="width: 46px; text-align: right;">
+                          <button type="button" class="switch switch-sm" role="switch" aria-checked="${!isRemoved}" onclick="toggleContribution('${fullId}')" title="Toggle ${fullId}">
+                            <span class="switch-thumb"></span>
+                          </button>
+                        </td>
+                      </tr>
+                    `;
+                  }).join("")}
+                </tbody>
+              </table>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }
+
+    // Render Feature Catalog Cards in Hierarchy or Flat View Mode
     function renderCatalog() {
       const res = computeResolution();
       const listEl = document.getElementById("catalog-cards-list");
@@ -2255,7 +2649,15 @@ npx skcb export-pages --out ./pages-dist</pre>
 
       const filtered = CATALOG.filter(f => {
         if (state.libFilter !== "all" && f.lib !== state.libFilter) return false;
-        if (state.catFilter !== "all" && f.category !== state.catFilter) return false;
+        if (state.catFilter !== "all") {
+          if (state.catFilter === "omnibar") {
+            if (f.category !== "omnibar" && !(f.capabilities && f.capabilities.includes("core.omnibar"))) {
+              return false;
+            }
+          } else if (f.category !== state.catFilter) {
+            return false;
+          }
+        }
         if (state.searchQuery) {
           const q = state.searchQuery.toLowerCase();
           const matchId = f.id.toLowerCase().includes(q);
@@ -2266,6 +2668,35 @@ npx skcb export-pages --out ./pages-dist</pre>
         return true;
       });
 
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div style="padding: 2.5rem 1rem; text-align: center; color: hsl(var(--muted-foreground)); font-size: 13px;">
+            未找到匹配的模组库、按键或站点卡片。
+          </div>
+        `;
+        return;
+      }
+
+      const precedence = (state.profile.conflictResolution && state.profile.conflictResolution.modulePrecedence) || ["tech", "ent", "prod", "b0o"];
+      const allLibs = Array.from(new Set(filtered.map(f => f.lib || "other")));
+      const sortedLibs = [
+        ...precedence.filter(l => allLibs.includes(l)),
+        ...allLibs.filter(l => !precedence.includes(l)).sort()
+      ];
+
+      const catTitleMap = {
+        "actions": state.uiLang === "zh-CN" ? "🌐 站点动作 (Actions)" : "🌐 Actions",
+        "search-engines": state.uiLang === "zh-CN" ? "🔍 搜索引擎 (Search Engines)" : "🔍 Search Engines",
+        "omnibar": state.uiLang === "zh-CN" ? "🚀 Omnibar 交互增强" : "🚀 Omnibar"
+      };
+
+      const libIconMap = {
+        ent: "🎬 @skcb/lib-ent",
+        tech: "💻 @skcb/lib-tech",
+        prod: "⚡ @skcb/lib-prod",
+        b0o: "📦 @skcb/lib-b0o"
+      };
+
       const libColorMap = {
         ent: "badge-emerald",
         tech: "badge-blue",
@@ -2273,143 +2704,89 @@ npx skcb export-pages --out ./pages-dist</pre>
         b0o: "badge-secondary"
       };
 
-      listEl.innerHTML = filtered.map(f => {
-        const isSelected = res.effectiveFeatures.has(f.id);
-        const isInherited = inheritedSet.has(f.id);
-        const isExpanded = state.expandedCards.has(f.id);
+      function groupDomainItems(items) {
+        const byDomain = new Map();
+        items.forEach(f => {
+          const domain = f.domain || (f.contributions && f.contributions[0] && f.contributions[0].domain) || (f.category === "search-engines" ? "global" : "global");
+          if (!byDomain.has(domain)) byDomain.set(domain, []);
+          byDomain.get(domain).push(f);
+        });
+        const domains = Array.from(byDomain.keys()).sort((a, b) => {
+          if (a === "global" && b !== "global") return 1;
+          if (a !== "global" && b === "global") return -1;
+          return a.localeCompare(b);
+        });
+        return { byDomain, domains };
+      }
 
-        const totalContribs = (f.contributions || []).length;
-        const removedInCard = (f.contributions || []).filter(c => (state.profile.selectRemoveContributions || []).includes(`${f.id}#${c.id}`)).length;
-        const suppressedInCard = (f.contributions || []).filter(c => suppressedMap.has(`${f.id}#${c.id}`)).length;
-        const winnerInCard = (f.contributions || []).filter(c => winnerMap.has(`${f.id}#${c.id}`)).length;
-        const activeInCard = isSelected ? (totalContribs - removedInCard - suppressedInCard) : 0;
-        const pkgLabel = f.pkg || (f.lib ? `@skcb/lib-${f.lib}` : "@skcb/core");
-
-        return `
-          <div class="feature-card ${isSelected ? "selected" : ""}">
-            <div class="feature-card-main">
-              <div class="feature-card-info">
-                <div class="feature-title-row">
-                  <span class="badge ${libColorMap[f.lib] || "badge-secondary"}">${pkgLabel}</span>
-                  <span class="feature-id">${f.id}</span>
-                  ${f.domain ? `<span class="badge badge-secondary">🌐 ${f.domain}</span>` : ""}
-                  ${isInherited ? `<span class="badge badge-amber">Inherited from ./common.json</span>` : ""}
-                  ${winnerInCard > 0 ? `<span class="badge badge-amber" title="包含跨模组同键位胜出项">⚡ ${winnerInCard} 键覆盖他库</span>` : ""}
-                  ${suppressedInCard > 0 ? `<span class="badge badge-rose" title="包含被高优先级模组替代的同名键">⚡ ${suppressedInCard} 键被替代</span>` : ""}
-                  ${f.secrets && f.secrets.length ? `<span class="badge badge-purple" title="Uses core.secretStorage (;ps)">🔐 ;ps (${f.secrets.join(", ")})</span>` : ""}
-                </div>
-                <div class="feature-desc">${resolveDesc(f.desc, state.uiLang)}</div>
-                <div class="feature-meta-row">
-                  <button class="btn btn-outline btn-sm" onclick="toggleCardDrawer('${f.id}')">
-                    <span>${isExpanded ? "▾" : "▸"}</span>
-                    <span>${state.uiLang === "zh-CN" ? `细粒度按键定制 (${activeInCard}/${totalContribs} 生效)` : `Customize Keys (${activeInCard}/${totalContribs} effective)`}</span>
-                  </button>
-                  ${removedInCard > 0 ? `<span class="badge badge-rose">🚫 -${removedInCard} 单键已关</span>` : ""}
-                  ${(f.capabilities || []).map(cap => `<span class="badge badge-secondary" style="font-weight:400;">⚙️ ${cap}</span>`).join("")}
-                </div>
-              </div>
-
-              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;">
-                <button type="button" class="switch" role="switch" aria-checked="${isSelected}" onclick="toggleFeature('${f.id}')" title="Enable / Disable Module">
-                  <span class="switch-thumb"></span>
-                </button>
-                <span style="font-size: 11px; color: hsl(var(--muted-foreground));">${isSelected ? (state.uiLang === "zh-CN" ? "已启用" : "Enabled") : (state.uiLang === "zh-CN" ? "未启用" : "Disabled")}</span>
-              </div>
-            </div>
-
-            ${isExpanded ? `
-              <div class="contrib-drawer">
-                <div class="contrib-drawer-header">
-                  <span>🎹 <strong>${f.id}</strong> — ${state.uiLang === "zh-CN" ? "单项开关与冲突色标（琥珀色=冲突胜出并可展开被替代项；玫红虚线=被高优库覆盖）" : "Per-Key Toggles & Conflict Highlights"}</span>
-                  <span>${state.uiLang === "zh-CN" ? "目标注释语言" : "Target Locale"}: <code>${state.profile.locale}</code></span>
-                </div>
-                <table class="contrib-table">
-                  <tbody>
-                    ${(f.contributions || []).map(c => {
-                      const fullId = `${f.id}#${c.id}`;
-                      const isRemoved = (state.profile.selectRemoveContributions || []).includes(fullId);
-                      const suppressedInfo = suppressedMap.get(fullId);
-                      const winnerInfo = winnerMap.get(fullId);
-                      const isReplacedOpen = state.expandedCatalogReplaced.has(fullId);
-                      const chord = c.kind === "search"
-                        ? `${state.profile.leaders.search}${c.alias} / c${state.profile.leaders.search}${c.alias}`
-                        : `${c.leaderFree ? "" : state.profile.leaders.site}${c.alias}`;
-
-                      let rowClass = "";
-                      let kbdClass = "kbd";
-                      if (isRemoved || !isSelected) {
-                        rowClass = "contrib-row-removed";
-                      } else if (winnerInfo) {
-                        rowClass = "contrib-row-winner";
-                        kbdClass = winnerInfo.strictConflict ? "kbd kbd-conflict-strict" : "kbd kbd-conflict-winner";
-                      } else if (suppressedInfo) {
-                        rowClass = "contrib-row-suppressed";
-                        kbdClass = "kbd kbd-suppressed";
-                      }
-
-                      let statusBadge = "";
-                      if (!isSelected) {
-                        statusBadge = `<span class="badge badge-secondary">${state.uiLang === "zh-CN" ? "模组未选" : "Module Off"}</span>`;
-                      } else if (isRemoved) {
-                        statusBadge = `<span class="badge badge-rose">🚫 已单键剔除</span>`;
-                      } else if (winnerInfo) {
-                        statusBadge = `
-                          <button class="btn btn-xs badge-amber" style="cursor:pointer;" onclick="toggleCatalogReplaced('${fullId}', event)" title="点击展开/收起被此按键替代的同名选项">
-                            ⚡ ${state.uiLang === "zh-CN" ? `冲突胜出 · 已替代 ${winnerInfo.overriddenCount} 项` : `Won · Replaced ${winnerInfo.overriddenCount}`} ${isReplacedOpen ? "▴" : "▾"}
-                          </button>
-                        `;
-                      } else if (suppressedInfo) {
-                        statusBadge = `
-                          <span style="display:inline-flex; align-items:center; gap:0.3rem;">
-                            <span class="badge badge-rose">⚡ 被 ${suppressedInfo.suppressedBy} 替代</span>
-                            <button class="btn btn-outline btn-xs" onclick="promoteOverriddenItem('${suppressedInfo.suppressedBy}', '${fullId}', event)" title="一键写入 overrides 改用此项">改用此项</button>
-                          </span>
-                        `;
-                      } else {
-                        statusBadge = `<span class="badge badge-emerald">✓ 独有生效</span>`;
-                      }
-
-                      const cDesc = resolveDesc(c.desc || c.description, state.profile.locale);
-                      return `
-                        <tr class="${rowClass}">
-                          <td style="width: 135px;"><span class="${kbdClass}">${chord}</span></td>
-                          <td style="width: 140px; font-family: var(--font-mono); color: hsl(var(--muted-foreground));">#${c.id}</td>
-                          <td>
-                            <div>${cDesc}</div>
-                            ${(winnerInfo && isReplacedOpen) ? `
-                              <div class="contrib-inline-replaced-drawer">
-                                <div style="font-weight:600; color:hsl(var(--amber-fg));">
-                                  ↳ ${state.uiLang === "zh-CN" ? "被此按键覆盖/替代的同键位选项：" : "Overridden / Replaced alternative(s):"}
-                                </div>
-                                ${winnerInfo.overriddenItems.map(ov => `
-                                  <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding-top:0.15rem;">
-                                    <span>
-                                      <span class="badge badge-rose">被替代</span>
-                                      <code style="margin:0 0.3rem;">${ov.fullId}</code>
-                                      <span style="color:hsl(var(--muted-foreground));">${resolveDesc(ov.contrib.desc || ov.contrib.description, state.profile.locale)}</span>
-                                    </span>
-                                    <button class="btn btn-outline btn-xs" onclick="promoteOverriddenItem('${fullId}', '${ov.fullId}', event)">切换采用该项</button>
-                                  </div>
-                                `).join("")}
-                              </div>
-                            ` : ""}
-                          </td>
-                          <td style="text-align: right;">${statusBadge}</td>
-                          <td style="width: 46px; text-align: right;">
-                            <button type="button" class="switch switch-sm" role="switch" aria-checked="${!isRemoved}" onclick="toggleContribution('${fullId}')" title="Toggle ${fullId}">
-                              <span class="switch-thumb"></span>
-                            </button>
-                          </td>
-                        </tr>
-                      `;
-                    }).join("")}
-                  </tbody>
-                </table>
-              </div>
-            ` : ""}
+      function renderDomainGroup(domain, domainItems) {
+        let domainHtml = `
+          <div class="catalog-group-domain-header">
+            <span>🌐 <strong>${domain}</strong></span>
+            <span class="badge badge-secondary" style="font-size: 11px;">${domainItems.length} 个模组</span>
           </div>
         `;
-      }).join("");
+
+        if (state.catFilter === "all") {
+          const byCat = new Map();
+          domainItems.forEach(f => {
+            const cat = f.category || "actions";
+            if (!byCat.has(cat)) byCat.set(cat, []);
+            byCat.get(cat).push(f);
+          });
+          const catOrder = ["actions", "search-engines", "omnibar"];
+          catOrder.forEach(cat => {
+            const list = byCat.get(cat);
+            if (!list || list.length === 0) return;
+            domainHtml += `
+              <div class="catalog-group-cat-header">
+                <span>${catTitleMap[cat] || cat}</span>
+                <span style="font-weight: 400; opacity: 0.8;">(${list.length})</span>
+              </div>
+            `;
+            domainHtml += list.map(f => renderFeatureCard(f, res, suppressedMap, winnerMap, inheritedSet)).join("");
+          });
+        } else {
+          domainHtml += domainItems.map(f => renderFeatureCard(f, res, suppressedMap, winnerMap, inheritedSet)).join("");
+        }
+
+        return domainHtml;
+      }
+
+      if (state.viewMode === "hierarchy") {
+        let finalHtml = "";
+        sortedLibs.forEach(lib => {
+          const libItems = filtered.filter(f => (f.lib || "other") === lib);
+          if (libItems.length === 0) return;
+          const prioIdx = precedence.indexOf(lib);
+          const prioLabel = prioIdx >= 0 ? `Priority #${prioIdx + 1}` : "Standard";
+          finalHtml += `
+            <div class="catalog-group-lib-header">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="badge ${libColorMap[lib] || "badge-secondary"}" style="font-size: 13px; font-weight: 600; padding: 0.35rem 0.65rem;">
+                  ${libIconMap[lib] || `@skcb/lib-${lib}`}
+                </span>
+                <span style="font-size: 12px; color: hsl(var(--muted-foreground));">
+                  (${prioLabel} · ${libItems.length} 模组)
+                </span>
+              </div>
+            </div>
+          `;
+          const { byDomain, domains } = groupDomainItems(libItems);
+          domains.forEach(domain => {
+            finalHtml += renderDomainGroup(domain, byDomain.get(domain));
+          });
+        });
+        listEl.innerHTML = finalHtml;
+      } else {
+        // Flat mode: 站点 -> 类型 (仅限全部视图)
+        let finalHtml = "";
+        const { byDomain, domains } = groupDomainItems(filtered);
+        domains.forEach(domain => {
+          finalHtml += renderDomainGroup(domain, byDomain.get(domain));
+        });
+        listEl.innerHTML = finalHtml;
+      }
     }
 
     window.toggleCardDrawer = function(featureId) {
@@ -2640,11 +3017,27 @@ npx skcb export-pages --out ./pages-dist</pre>
                   </div>
                   <div style="display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0;">
                     ${conflictBadgeHtml}
+                    ${item.isCustomKeybinding ? `<span class="badge badge-purple" title="已自定义别名: ${c.alias}">自定义</span>` : ""}
+                    <button class="btn btn-ghost btn-xs" onclick="startEditKeybinding('${item.fullId}', event)" title="自定义修改此快捷键别名">✏️</button>
+                    ${item.isCustomKeybinding ? `<button class="btn btn-ghost btn-xs text-rose" onclick="resetKeybinding('${item.fullId}', event)" title="重置回默认快捷键 (${c.defaultAlias})">↺</button>` : ""}
                     <span class="badge badge-secondary" style="font-family: var(--font-mono); font-size: 10.5px;">
                       ${highlightText(`${item.feature.id}#${c.id}`, state.keymapSearchQuery)}
                     </span>
                   </div>
                 </div>
+
+                ${state.editingKeybinding === item.fullId ? `
+                  <div class="keymap-inline-editor" style="margin: 0.35rem 0.5rem 0.5rem; padding: 0.5rem 0.65rem; background: hsl(var(--muted)/0.5); border: 1px dashed hsl(var(--border)); border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                      <span style="font-size: 11.5px; font-weight: 600; color: hsl(var(--foreground));">别名设置:</span>
+                      <input type="text" id="input-edit-alias" class="input input-sm" style="width: 85px; font-family: var(--font-mono); font-weight: 700; height: 26px; padding: 0 0.4rem;" value="${c.alias}" oninput="handleKeybindingInput('${item.fullId}', '${c.domain || 'global'}', '${c.kind}', ${Boolean(c.leaderFree)})" />
+                      <button class="btn btn-primary btn-xs" id="btn-save-keybinding" onclick="saveKeybindingEdit('${item.fullId}', '${c.domain || 'global'}', '${c.kind}', ${Boolean(c.leaderFree)}, event)">保存</button>
+                      <button class="btn btn-outline btn-xs" onclick="cancelKeybindingEdit(event)">取消</button>
+                      ${item.isCustomKeybinding ? `<button class="btn btn-ghost btn-xs text-rose" onclick="resetKeybinding('${item.fullId}', event)">重置默认</button>` : ""}
+                    </div>
+                    <div id="keybinding-gate-feedback" style="margin-top: 0.35rem; font-size: 11px; line-height: 1.35; display: none;"></div>
+                  </div>
+                ` : ""}
 
                 ${isDrawerOpen ? `
                   <div class="keymap-overridden-drawer">
@@ -2699,6 +3092,7 @@ npx skcb export-pages --out ./pages-dist</pre>
         conflictResolution: state.profile.conflictResolution,
         leaders: state.profile.leaders,
         settings: state.profile.settings,
+        ...(state.profile.keybindings && Object.keys(state.profile.keybindings).length ? { keybindings: state.profile.keybindings } : {}),
         ...(state.profile.overrides.length ? { overrides: state.profile.overrides } : {})
       };
       document.getElementById("live-profile-json").textContent = JSON.stringify(cleanProfile, null, 2);
@@ -2818,6 +3212,7 @@ npx skcb export-pages --out ./pages-dist</pre>
     function renderAll() {
       applyLanguage();
       renderPrecedenceBar();
+      renderLibPills();
       renderCatalog();
       renderInspector();
     }
@@ -2847,6 +3242,24 @@ npx skcb export-pages --out ./pages-dist</pre>
         });
       });
 
+      // View mode switcher: Hierarchy vs Flat
+      const btnViewHierarchy = document.getElementById("btn-view-hierarchy");
+      const btnViewFlat = document.getElementById("btn-view-flat");
+      if (btnViewHierarchy && btnViewFlat) {
+        btnViewHierarchy.addEventListener("click", () => {
+          state.viewMode = "hierarchy";
+          btnViewHierarchy.classList.add("active");
+          btnViewFlat.classList.remove("active");
+          renderCatalog();
+        });
+        btnViewFlat.addEventListener("click", () => {
+          state.viewMode = "flat";
+          btnViewFlat.classList.add("active");
+          btnViewHierarchy.classList.remove("active");
+          renderCatalog();
+        });
+      }
+
       // Preset switcher
       document.getElementById("preset-profile-switcher").addEventListener("change", (e) => {
         const p = PRESETS[e.target.value];
@@ -2858,6 +3271,7 @@ npx skcb export-pages --out ./pages-dist</pre>
         state.profile.selectAdd = [...p.selectAdd];
         state.profile.selectRemove = [];
         state.profile.selectRemoveContributions = [...p.selectRemoveContributions];
+        state.profile.keybindings = p.keybindings ? { ...p.keybindings } : {};
         state.profile.conflictResolution.mode = p.conflictMode;
         state.profile.settings.defaultSearchEngine = p.defaultSearch;
         state.profile.overrides = [];
@@ -3075,7 +3489,8 @@ npx skcb export-pages --out ./pages-dist</pre>
                   conflictMode: p.conflictResolution?.mode || "module-precedence",
                   defaultSearch: p.settings?.defaultSearchEngine || "du",
                   selectAdd: p.selectAdd || p.select || [],
-                  selectRemoveContributions: p.selectRemoveContributions || []
+                  selectRemoveContributions: p.selectRemoveContributions || [],
+                  keybindings: p.keybindings || {}
                 };
                 if (!Array.from(switcher.options).some(o => o.value === p.id)) {
                   const opt = document.createElement("option");
@@ -3111,32 +3526,41 @@ npx skcb export-pages --out ./pages-dist</pre>
                 const normalizedId = remoteEntry.id;
                 const b0oAlias = normalizedId.startsWith('upstream/') ? normalizedId.replace(/^upstream\//, 'b0o/') : normalizedId;
                 const existing = CATALOG.find(e => e.id === normalizedId || e.id === b0oAlias);
+                const namespace = normalizedId.split('/')[0] || 'custom';
+                const localId = normalizedId.split('/')[1] || normalizedId;
+                const cat = localId.startsWith('actions.')
+                  ? 'actions'
+                  : (localId.startsWith('search-engines.') || localId.startsWith('search.'))
+                  ? 'search-engines'
+                  : (localId.startsWith('omnibar.') || localId.startsWith('omnibar'))
+                  ? 'omnibar'
+                  : 'actions';
+
+                const contributions = (remoteEntry.contributions || []).map(c => ({
+                  id: c.id,
+                  alias: c.alias || '',
+                  defaultAlias: c.alias || '',
+                  kind: c.kind || 'mapkey',
+                  domain: c.domain || (cat === 'search-engines' ? 'global' : 'global'),
+                  leaderFree: !!c.leaderFree,
+                  callbackRequired: !!c.callbackRequired,
+                  desc: {
+                    'zh-CN': resolveDesc(c.description || c.desc, 'zh-CN') || c.id,
+                    'en': resolveDesc(c.description || c.desc, 'en') || c.id
+                  }
+                }));
+
                 if (!existing) {
-                  const namespace = normalizedId.split('/')[0] || 'custom';
-                  const localId = normalizedId.split('/')[1] || normalizedId;
-                  const cat = localId.startsWith('actions.') ? 'actions' : localId.startsWith('search-engines.') ? 'search' : 'omnibar';
                   const entryDesc = {
                     'zh-CN': resolveDesc(remoteEntry.description || remoteEntry.desc, 'zh-CN') || normalizedId,
                     'en': resolveDesc(remoteEntry.description || remoteEntry.desc, 'en') || normalizedId
                   };
-                  const contributions = (remoteEntry.contributions || []).map(c => ({
-                    id: c.id,
-                    alias: c.alias || '',
-                    kind: c.kind || 'mapkey',
-                    domain: c.domain || 'global',
-                    leaderFree: !!c.leaderFree,
-                    callbackRequired: !!c.callbackRequired,
-                    desc: {
-                      'zh-CN': resolveDesc(c.description || c.desc, 'zh-CN') || c.id,
-                      'en': resolveDesc(c.description || c.desc, 'en') || c.id
-                    }
-                  }));
                   CATALOG.push({
                     id: normalizedId,
                     lib: namespace === 'upstream' ? 'b0o' : namespace,
                     pkg: `@skcb/lib-${namespace === 'upstream' ? 'b0o' : namespace}`,
                     category: cat,
-                    domain: contributions[0]?.domain || 'global',
+                    domain: contributions[0]?.domain || (cat === 'search-engines' ? 'global' : 'global'),
                     desc: entryDesc,
                     capabilities: remoteEntry.capabilities || [],
                     requires: remoteEntry.requires || [],
@@ -3144,6 +3568,12 @@ npx skcb export-pages --out ./pages-dist</pre>
                     contributions: contributions
                   });
                   updated = true;
+                } else {
+                  if (contributions.length > 0) {
+                    existing.contributions = contributions;
+                    existing.category = cat;
+                    updated = true;
+                  }
                 }
               });
               if (updated) {

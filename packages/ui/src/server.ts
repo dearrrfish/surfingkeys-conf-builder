@@ -244,6 +244,7 @@ export async function createVisualServer(options: ServerOptions = {}) {
             settings: p.settings ?? {},
             leaders: {site: p.leaders?.site ?? '<Space>', search: p.leaders?.search ?? 'a'},
             overrides: p.overrides ?? [],
+            keybindings: p.keybindings ?? {},
             provenance: {}
           };
           const explanation = explain(effectiveProfile, catalog);
