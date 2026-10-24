@@ -134,6 +134,9 @@
             "locale": {
               "type": "string"
             },
+            "keybindings": {
+              "type": "object"
+            },
             "searchGroups": {
               "type": "array"
             }
@@ -586,6 +589,9 @@
             "locale": {
               "type": "string"
             },
+            "keybindings": {
+              "type": "object"
+            },
             "searchGroups": {
               "type": "array"
             }
@@ -980,7 +986,8 @@
                     "enum": [
                       "mapkey",
                       "map",
-                      "search"
+                      "search",
+                      "omnibar"
                     ]
                   },
                   "keys": {

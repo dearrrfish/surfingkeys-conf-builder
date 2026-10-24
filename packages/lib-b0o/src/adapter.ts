@@ -145,10 +145,7 @@ export async function buildB0oAdapter(options: AdapterOptions = {}): Promise<voi
   const upstreamHelp = await readFile(path.join(upstreamDir, 'src/help.js'), 'utf8');
   await writeFile(path.join(outputDir, 'shared/help.js'), upstreamHelp, 'utf8');
 
-  // 4. Generate dist/shared/conf.priv.js
-  await writeFile(path.join(outputDir, 'shared/conf.priv.js'), 'export default { keys: {}, doi_handler: true };\n', 'utf8');
-
-  // 5. Generate dist/shared/util.js (with MV3 browser.storage.local guard)
+  // 4. Generate dist/shared/util.js (with MV3 browser.storage.local guard)
   let utilContent = await readFile(path.join(upstreamDir, 'src/util.js'), 'utf8');
   utilContent = utilContent.replace(
     'if (typeof browser !== "undefined") {',
@@ -156,19 +153,21 @@ export async function buildB0oAdapter(options: AdapterOptions = {}): Promise<voi
   );
   await writeFile(path.join(outputDir, 'shared/util.js'), utilContent, 'utf8');
 
-  // 6. Generate dist/shared/actions.js
+  // 5. Generate dist/shared/actions.js
   let actionsContent = await readFile(path.join(upstreamDir, 'src/actions.js'), 'utf8');
   actionsContent = actionsContent.replace('import ghReservedNames from "github-reserved-names"\n', 'const ghReservedNames = [];\n');
-  actionsContent = actionsContent.replace('import priv from "./conf.priv.js"', 'const priv = { keys: {} };');
+  actionsContent = actionsContent.replace('import priv from "./conf.priv.js"', 'const priv = { keys: {}, doi_handler: true };');
   await writeFile(path.join(outputDir, 'shared/actions.js'), actionsContent, 'utf8');
 
-  // 7. Generate dist/shared/keys.js
+  // 6. Generate dist/shared/keys.js
   const upstreamKeys = await readFile(path.join(upstreamDir, 'src/keys.js'), 'utf8');
-  await writeFile(path.join(outputDir, 'shared/keys.js'), upstreamKeys, 'utf8');
+  const keysContent = upstreamKeys.replace('import priv from "./conf.priv.js"', 'const priv = { keys: {}, doi_handler: true };');
+  await writeFile(path.join(outputDir, 'shared/keys.js'), keysContent, 'utf8');
 
-  // 8. Generate dist/shared/search-engines.js
+  // 7. Generate dist/shared/search-engines.js
   const upstreamSe = await readFile(path.join(upstreamDir, 'src/search-engines.js'), 'utf8');
-  await writeFile(path.join(outputDir, 'shared/search-engines.js'), upstreamSe, 'utf8');
+  const seContent = upstreamSe.replace('import priv from "./conf.priv.js"', 'const priv = { keys: {}, doi_handler: true };');
+  await writeFile(path.join(outputDir, 'shared/search-engines.js'), seContent, 'utf8');
 
   // 9. Evaluate upstream keys.js to extract all 104 domains and 265 mappings
   const transpiledKeys = ts.transpileModule(upstreamKeys, {
@@ -307,34 +306,17 @@ export default () => ({
   }
 });
 `;
-    } else if (domain === 'github.com') {
-      // Use explicit closures for github to preserve compatibility with existing unit tests
-      moduleJs = `import actions from '../shared/actions.js';
-
-export default () => ({
-  callbacks: {
-    'actions': () => actions.gh.openRepoPage("/actions"),
-    'commits': () => actions.gh.openRepoPage("/commits"),
-    'issues': () => actions.gh.openRepoPage("/issues"),
-    'notifications': () => actions.gh.openPage("/notifications"),
-    'pulls': () => actions.gh.openRepoPage("/pulls"),
-    'repo': () => actions.gh.openRepoPage("/"),
-    'settings': () => actions.gh.openRepoPage("/settings"),
-    'wiki': () => actions.gh.openRepoPage("/wiki"),
-    'security': () => actions.gh.openRepoPage("/security")
-  }
-});
-`;
     } else {
       moduleJs = `import keys from '../shared/keys.js';
 
-const domainMaps = keys.maps[${JSON.stringify(domain)}] || [];
-
-export default () => ({
-  callbacks: {
+export default () => {
+  const domainMaps = keys.maps[${JSON.stringify(domain)}] || [];
+  return {
+    callbacks: {
 ${callbackBindings.join(',\n')}
-  }
-});
+    }
+  };
+};
 `;
     }
 
@@ -348,7 +330,7 @@ ${callbackBindings.join(',\n')}
         'zh-CN': zhTitle
       },
       requires: [],
-      capabilities: domain === 'amazon.com' ? ['core.openLink'] : (domain === 'github.com' ? ['core.openLink', 'core.search'] : []),
+      capabilities: domain === 'amazon.com' || domain === 'github.com' ? ['core.openLink'] : [],
       contributions
     };
   }

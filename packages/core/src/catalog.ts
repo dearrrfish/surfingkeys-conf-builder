@@ -31,7 +31,8 @@ const KNOWN_CAPABILITIES = new Set([
   'core.clickElement',
   'core.clipboard',
   'core.omnibar',
-  'core.secretStorage'
+  'core.secretStorage',
+  'core.search'
 ]);
 
 function isKnownCapability(cap: string): boolean {
