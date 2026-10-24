@@ -32,6 +32,7 @@ workspace 路径是相对该文件的路径；profile 的 extends 相对该 prof
 | settings / unsetSettings | 按顶层字段替换或删除，不深合并 |
 | leaders | 单独继承 site/search；默认 `<Space>` 和 `a` |
 | overrides | 子方案显式提供时替换完整数组，不追加父数组 |
+| searchGroups | 聚合搜索与多引擎批处理组配置；继承合并同名 ID，详见 [聚合搜索文档](aggregated-search.md) |
 
 父方案 common.json：
 

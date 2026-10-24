@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SKCB Aggregated Search Hub</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --border: #334155;
+      --card-bg: rgba(30, 41, 59, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --header-height: 56px;
+      --tabs-height: 42px;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    [data-theme="light"] {
+      --bg-primary: #f1f5f9;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --accent: #0284c7;
+      --accent-hover: #0369a1;
+      --border: #cbd5e1;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --card-border: rgba(0, 0, 0, 0.08);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Top Bar */
+    header {
+      height: var(--header-height);
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      gap: 16px;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .brand-section svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+    .search-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      max-width: 720px;
+    }
+    .group-select {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      outline: none;
+    }
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 36px 8px 14px;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+    }
+    .search-input-shortcut {
+      position: absolute;
+      right: 12px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      pointer-events: none;
+    }
+    .actions-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn:hover {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .toggle-label input {
+      cursor: pointer;
+    }
+
+    /* Tabs Bar (Only shown when > 4 engines or forced) */
+    .tabs-bar {
+      height: var(--tabs-height);
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .tab-item {
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .tab-item:hover {
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
+    }
+    .tab-item.active {
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.12);
+      font-weight: 600;
+    }
+    .tab-badge {
+      font-size: 0.7rem;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    /* Main Content Container */
+    #content-container {
+      flex: 1;
+      height: calc(100vh - var(--header-height));
+      position: relative;
+      overflow: hidden;
+    }
+    #content-container.with-tabs {
+      height: calc(100vh - var(--header-height) - var(--tabs-height));
+    }
+
+    /* Grid Layouts (for <= 4 engines) */
+    .grid-view {
+      display: grid;
+      width: 100%;
+      height: 100%;
+      gap: 6px;
+      padding: 6px;
+    }
+    .grid-view.count-1 {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
+    }
+    .grid-view.count-2 {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr;
+    }
+    .grid-view.count-3 {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+    .grid-view.count-3 .cell-item:nth-child(3) {
+      grid-column: span 2;
+    }
+    .grid-view.count-4 {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+
+    /* Tabs View (for > 4 engines): Live Retention Pattern */
+    .tabs-view {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .tabs-view .cell-item {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      visibility: hidden;
+      transform: translateY(-99999px);
+      pointer-events: none;
+    }
+    .tabs-view .cell-item.active {
+      visibility: visible;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    /* Cell Item & Frame */
+    .cell-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+      min-height: 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .cell-header {
+      height: 34px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      user-select: none;
+    }
+    .cell-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-primary);
+    }
+    .cell-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cell-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: background 0.1s, color 0.1s;
+    }
+    .cell-btn:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+    .cell-body {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: #ffffff;
+    }
+    .cell-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* Blocked Site Fallback Card */
+    .fallback-card {
+      width: 100%;
+      height: 100%;
+      background: var(--bg-secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      gap: 16px;
+    }
+    .fallback-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      border: 1px solid var(--border);
+    }
+    .fallback-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .fallback-desc {
+      max-width: 420px;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .fallback-tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .fallback-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 16px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Omni-Header -->
+  <header>
+    <div class="brand-section">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+      <span>SKCB Search Hub</span>
+    </div>
+
+    <div class="search-section">
+      <select id="group-select" class="group-select" aria-label="Search Engine Group"></select>
+
+      <div class="search-input-wrapper">
+        <input type="text" id="query-input" class="search-input" placeholder="键入关键词搜索..." autocomplete="off">
+        <span class="search-input-shortcut">/</span>
+      </div>
+    </div>
+
+    <div class="actions-section">
+      <label class="toggle-label" title="在聚合搜索时自动在后台标签页打开被拦截站点">
+        <input type="checkbox" id="auto-open-toggle">
+        <span>自动弹出阻断站</span>
+      </label>
+
+      <button id="btn-open-all" class="btn" title="在独立标签页中批量打开当前组的所有搜索引擎">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+        <span>全部打开</span>
+      </button>
+
+      <button id="theme-btn" class="btn" title="切换暗黑/明亮主题">🌓</button>
+    </div>
+  </header>
+
+  <!-- Top Tabs Bar (Visible when > 4 engines) -->
+  <nav id="tabs-bar" class="tabs-bar" style="display: none;"></nav>
+
+  <!-- Main View Container -->
+  <main id="content-container"></main>
+
+  <script>
+    // Preset Engine Groups
+    const DEFAULT_GROUPS = [
+      {
+        id: "dev",
+        name: "技术研发 (Developer)",
+        engines: [
+          { name: "DevDocs", url: "https://devdocs.io/#q={query}", canIframe: true },
+          { name: "GitHub", url: "https://github.com/search?q={query}&type=code", canIframe: false },
+          { name: "StackOverflow", url: "https://stackoverflow.com/search?q={query}", canIframe: false },
+          { name: "MDN", url: "https://developer.mozilla.org/zh-CN/search?q={query}", canIframe: false }
+        ]
+      },
+      {
+        id: "web",
+        name: "通用搜索 (General Web)",
+        engines: [
+          { name: "Bing", url: "https://www.bing.com/search?q={query}", canIframe: true },
+          { name: "Wikipedia", url: "https://zh.wikipedia.org/w/index.php?search={query}", canIframe: true },
+          { name: "Google", url: "https://www.google.com/search?q={query}", canIframe: false },
+          { name: "DuckDuckGo", url: "https://duckduckgo.com/?q={query}", canIframe: false }
+        ]
+      },
+      {
+        id: "full",
+        name: "综合全景 (Full Multi-Tab)",
+        engines: [
+          { name: "Bing", url: "https://www.bing.com/search?q={query}", canIframe: true },
+          { name: "Wikipedia", url: "https://en.wikipedia.org/w/index.php?search={query}", canIframe: true },
+          { name: "DevDocs", url: "https://devdocs.io/#q={query}", canIframe: true },
+          { name: "HackerNews", url: "https://hn.algolia.com/?q={query}", canIframe: true },
+          { name: "GitHub", url: "https://github.com/search?q={query}", canIframe: false },
+          { name: "Google", url: "https://www.google.com/search?q={query}", canIframe: false }
+        ]
+      }
+    ];
+
+    // State
+    let groups = DEFAULT_GROUPS;
+    let currentGroupId = "dev";
+    let currentQuery = "";
+    let activeTabIndex = 0;
+    let autoOpenBlocked = localStorage.getItem("skcb_auto_open_blocked") === "true";
+
+    // DOM Elements
+    const groupSelect = document.getElementById("group-select");
+    const queryInput = document.getElementById("query-input");
+    const tabsBar = document.getElementById("tabs-bar");
+    const contentContainer = document.getElementById("content-container");
+    const btnOpenAll = document.getElementById("btn-open-all");
+    const autoOpenToggle = document.getElementById("auto-open-toggle");
+    const themeBtn = document.getElementById("theme-btn");
+
+    function formatUrl(template, query) {
+      const q = encodeURIComponent(query);
+      if (template.includes("{query}")) return template.replace(/\{query\}/g, q);
+      if (template.includes("{q}")) return template.replace(/\{q\}/g, q);
+      return template + q;
+    }
+
+    function initGroups() {
+      // Check if custom groups are in localStorage
+      const saved = localStorage.getItem("skcb_search_groups");
+      if (saved) {
+        try { groups = JSON.parse(saved); } catch (e) {}
+      }
+
+      groupSelect.innerHTML = "";
+      groups.forEach(g => {
+        const opt = document.createElement("option");
+        opt.value = g.id;
+        opt.textContent = g.name;
+        groupSelect.appendChild(opt);
+      });
+    }
+
+    function parseParams() {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("q") || "";
+      const group = params.get("group") || "";
+      const mode = params.get("mode") || "";
+
+      if (group && groups.some(g => g.id === group)) {
+        currentGroupId = group;
+        groupSelect.value = group;
+      }
+      if (q) {
+        currentQuery = q;
+        queryInput.value = q;
+      }
+
+      // If mode === 'tabs' was passed in URL, batch open and display note
+      if (mode === "tabs" && q) {
+        openAllTabs();
+      }
+    }
+
+    function renderView() {
+      const group = groups.find(g => g.id === currentGroupId) || groups[0];
+      const engines = group.engines || [];
+      const count = engines.length;
+
+      // Layout rule: <= 4 engines: balanced grid; > 4 engines: top tabs
+      const isGrid = count <= 4;
+
+      if (isGrid) {
+        tabsBar.style.display = "none";
+        contentContainer.className = "";
+        contentContainer.innerHTML = `<div class="grid-view count-${count}"></div>`;
+        const grid = contentContainer.firstElementChild;
+
+        engines.forEach((engine, idx) => {
+          grid.appendChild(createCell(engine, idx, true));
+        });
+      } else {
+        tabsBar.style.display = "flex";
+        contentContainer.className = "with-tabs";
+        contentContainer.innerHTML = `<div class="tabs-view"></div>`;
+        const view = contentContainer.firstElementChild;
+
+        tabsBar.innerHTML = "";
+        engines.forEach((engine, idx) => {
+          // Tab button
+          const tab = document.createElement("div");
+          tab.className = `tab-item ${idx === activeTabIndex ? 'active' : ''}`;
+          tab.innerHTML = `<span>${engine.name}</span><span class="tab-badge">${idx + 1}</span>`;
+          tab.addEventListener("click", () => switchTab(idx));
+          tabsBar.appendChild(tab);
+
+          // Cell
+          const cell = createCell(engine, idx, idx === activeTabIndex);
+          view.appendChild(cell);
+        });
+      }
+
+      // If auto-open is enabled and search query exists, auto open blocked engines in tabs
+      if (autoOpenBlocked && currentQuery) {
+        engines.forEach(engine => {
+          if (!engine.canIframe) {
+            window.open(formatUrl(engine.url, currentQuery), "_blank");
+          }
+        });
+      }
+    }
+
+    function createCell(engine, idx, isActive) {
+      const cell = document.createElement("div");
+      cell.className = `cell-item ${isActive ? 'active' : ''}`;
+      cell.dataset.index = idx;
+
+      const targetUrl = currentQuery ? formatUrl(engine.url, currentQuery) : engine.url.replace(/\{query\}|\{q\}/g, '');
+
+      // Header
+      const header = document.createElement("div");
+      header.className = "cell-header";
+      header.innerHTML = `
+        <div class="cell-title">
+          <span>${engine.name}</span>
+          ${engine.canIframe ? '<span style="color:#4ade80;font-size:0.7rem;">● 直连</span>' : '<span style="color:#f87171;font-size:0.7rem;">● 阻断</span>'}
+        </div>
+        <div class="cell-controls">
+          <button class="cell-btn btn-open" title="在新标签页中打开">↗ 打开</button>
+          ${engine.canIframe ? '<button class="cell-btn btn-reload" title="刷新">↻</button>' : ''}
+        </div>
+      `;
+
+      header.querySelector(".btn-open").addEventListener("click", () => {
+        window.open(targetUrl, "_blank");
+      });
+
+      if (engine.canIframe) {
+        header.querySelector(".btn-reload").addEventListener("click", () => {
+          const iframe = cell.querySelector("iframe");
+          if (iframe) iframe.src = targetUrl;
+        });
+      }
+
+      // Body
+      const body = document.createElement("div");
+      body.className = "cell-body";
+
+      if (engine.canIframe) {
+        const iframe = document.createElement("iframe");
+        iframe.src = targetUrl;
+        iframe.loading = "lazy";
+        iframe.title = engine.name;
+        body.appendChild(iframe);
+      } else {
+        // Smart Card Fallback for blocked engines
+        body.innerHTML = `
+          <div class="fallback-card">
+            <div class="fallback-icon">🛡️</div>
+            <div class="fallback-title">${engine.name}</div>
+            <div class="fallback-tag">X-Frame-Options / CSP 保护站点</div>
+            <div class="fallback-desc">
+              该站点限制了直接在第三方网页内嵌套呈现。我们为您保留了快捷联动通道，一键即可原生直达完整搜索结果。
+            </div>
+            <div class="fallback-actions">
+              <button class="btn btn-primary btn-card-open">在新标签页打开 ${engine.name} ↗</button>
+            </div>
+          </div>
+        `;
+        body.querySelector(".btn-card-open").addEventListener("click", () => {
+          window.open(targetUrl, "_blank");
+        });
+      }
+
+      cell.appendChild(header);
+      cell.appendChild(body);
+      return cell;
+    }
+
+    function switchTab(idx) {
+      activeTabIndex = idx;
+      const tabItems = tabsBar.querySelectorAll(".tab-item");
+      tabItems.forEach((t, i) => t.classList.toggle("active", i === idx));
+
+      const cells = contentContainer.querySelectorAll(".tabs-view .cell-item");
+      cells.forEach((c, i) => c.classList.toggle("active", i === idx));
+    }
+
+    function openAllTabs() {
+      const group = groups.find(g => g.id === currentGroupId) || groups[0];
+      (group.engines || []).forEach(engine => {
+        const url = currentQuery ? formatUrl(engine.url, currentQuery) : engine.url.replace(/\{query\}|\{q\}/g, '');
+        window.open(url, "_blank");
+      });
+    }
+
+    function executeSearch(q) {
+      currentQuery = q.trim();
+      const params = new URLSearchParams(window.location.search);
+      if (currentQuery) {
+        params.set("q", currentQuery);
+      } else {
+        params.delete("q");
+      }
+      params.set("group", currentGroupId);
+      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+      renderView();
+    }
+
+    // Event Listeners
+    groupSelect.addEventListener("change", (e) => {
+      currentGroupId = e.target.value;
+      activeTabIndex = 0;
+      executeSearch(queryInput.value);
+    });
+
+    queryInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        executeSearch(queryInput.value);
+      } else if (e.key === "Escape") {
+        queryInput.blur();
+      }
+    });
+
+    btnOpenAll.addEventListener("click", openAllTabs);
+
+    autoOpenToggle.checked = autoOpenBlocked;
+    autoOpenToggle.addEventListener("change", (e) => {
+      autoOpenBlocked = e.target.checked;
+      localStorage.setItem("skcb_auto_open_blocked", autoOpenBlocked ? "true" : "false");
+    });
+
+    themeBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = current === "light" ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("skcb_theme", next);
+    });
+
+    window.addEventListener("keydown", (e) => {
+      // Focus search with '/'
+      if (e.key === "/" && document.activeElement !== queryInput) {
+        e.preventDefault();
+        queryInput.focus();
+        queryInput.select();
+      }
+      // Number keys 1-9 for tabs
+      if (document.activeElement !== queryInput && e.key >= "1" && e.key <= "9") {
+        const idx = parseInt(e.key, 10) - 1;
+        const group = groups.find(g => g.id === currentGroupId) || groups[0];
+        if (idx < (group.engines || []).length && group.engines.length > 4) {
+          switchTab(idx);
+        }
+      }
+    });
+
+    // Initialize
+    const savedTheme = localStorage.getItem("skcb_theme");
+    if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+
+    initGroups();
+    parseParams();
+    renderView();
+  </script>
+</body>
+</html>

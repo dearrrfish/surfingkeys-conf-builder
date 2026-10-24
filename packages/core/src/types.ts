@@ -20,6 +20,23 @@ export interface Override {
   with: string;
 }
 
+export interface SearchEngineItem {
+  name: string;
+  url: string;
+  canIframe?: boolean;
+}
+
+export interface SearchEngineGroup {
+  id: string;
+  name: string;
+  description?: string;
+  leader?: string;
+  mode?: 'tabs' | 'hub' | 'both';
+  layout?: 'auto' | 'grid' | 'tabs';
+  engines: (string | SearchEngineItem)[];
+  hubUrl?: string;
+}
+
 export interface ConflictResolution {
   mode?: 'strict' | 'prefer-later' | 'module-precedence';
   modulePrecedence?: string[];
@@ -43,6 +60,7 @@ export interface Profile {
   leaders?: { site?: string; search?: string };
   keybindings?: Record<string, string>;
   overrides?: Override[];
+  searchGroups?: SearchEngineGroup[];
 }
 
 export interface Contribution {
@@ -113,6 +131,7 @@ export interface EffectiveProfile {
   leaders: { site: string; search: string };
   keybindings?: Record<string, string>;
   overrides: Override[];
+  searchGroups?: SearchEngineGroup[];
   provenance: Record<string, string>;
 }
 

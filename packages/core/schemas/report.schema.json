@@ -133,6 +133,9 @@
             },
             "locale": {
               "type": "string"
+            },
+            "searchGroups": {
+              "type": "array"
             }
           },
           "required": [
@@ -582,6 +585,9 @@
             },
             "locale": {
               "type": "string"
+            },
+            "searchGroups": {
+              "type": "array"
             }
           },
           "required": [
