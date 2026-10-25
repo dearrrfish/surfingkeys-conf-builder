@@ -46,7 +46,7 @@ flowchart TD
 - **`packages/@skcb/lib-ent`**：原生娱乐向模组（Bilibili 视频全屏/投币/弹幕、YouTube Piped/Invidious 镜像、Twitter Nitter 镜像）。
 - **`packages/@skcb/lib-tech`**：原生科技向模组（GitHub 深度导航与剪贴板打开、sspai 搜索、SearXNG 元搜索、`parseGithubRepo` 工具）。
 - **`packages/@skcb/lib-prod`**：原生生产力向模组（Gmail HTML 视图文件夹导航与会话操作、Pinboard 书签保存与阅读清单）。
-- **`templates/`**：包含 `skcb-proj-repo`（配置项目模板）与 `skcb-lib-repo`（第三方模组库模板），零 `workspace:*` 依赖。
+- **`templates/`**：包含 `skcb-proj-repo`（配置项目模板，内置可选的 GitHub Actions Gist 自动化脚本分发）与 `skcb-lib-repo`（第三方模组库模板），零 `workspace:*` 依赖。
 - **`scripts/init.sh`**：支持 `curl -fsSL ... | bash` 远程执行的互动式初始化脚本，支持 `/dev/tty` 交互式参数裁剪与 `--yes` 静默模式。
 - **`skills/`**：兼容 `npx skills` 的 AI 编程助手专属技能，包含 `surfingkeys-profile-create` 与 `surfingkeys-profile-update`。
 

@@ -13,6 +13,7 @@ PROJECT_TYPE="proj"
 INCLUDE_UI=true
 LIBS="b0o,ent,tech,prod"
 INCLUDE_SKILLS=true
+INCLUDE_GIST_ACTION=true
 PACKAGE_MANAGER=""
 AUTO_YES=false
 DRY_RUN=false
@@ -60,6 +61,14 @@ while [[ $# -gt 0 ]]; do
       INCLUDE_SKILLS=false
       shift
       ;;
+    --gist-action)
+      INCLUDE_GIST_ACTION=true
+      shift
+      ;;
+    --no-gist-action)
+      INCLUDE_GIST_ACTION=false
+      shift
+      ;;
     --pm)
       PACKAGE_MANAGER="$2"
       shift 2
@@ -81,6 +90,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --ui / --no-ui     Include @skcb/ui server & visual frontend"
       echo "  --libs <csv>       Comma-separated libraries: b0o,ent,tech,prod"
       echo "  --skills / --no-skills  Install AI agent skills"
+      echo "  --gist-action / --no-gist-action  Include GitHub Gist publishing action (default: true)"
       echo "  --pm <pnpm|npm|bun>     Package manager to use"
       echo "  -y, --yes          Non-interactive mode (use defaults)"
       echo "  --dry-run          Simulate creation without writing files"
@@ -129,6 +139,7 @@ if is_interactive; then
     prompt LIBS "Functional libraries to include (comma-separated: b0o,ent,tech,prod)" "$LIBS"
     prompt INCLUDE_UI "Include @skcb/ui visual distribution server? (true/false)" "$INCLUDE_UI"
     prompt INCLUDE_SKILLS "Install AI pairing skills into skills/? (true/false)" "$INCLUDE_SKILLS"
+    prompt INCLUDE_GIST_ACTION "Include GitHub Actions Gist publisher? (true/false)" "$INCLUDE_GIST_ACTION"
   fi
 fi
 
@@ -153,6 +164,7 @@ if [[ "$PROJECT_TYPE" == "proj" ]]; then
   echo "  Libraries:       $LIBS"
   echo "  Include UI:      $INCLUDE_UI"
   echo "  Install Skills:  $INCLUDE_SKILLS"
+  echo "  Gist Publishing: $INCLUDE_GIST_ACTION"
 fi
 
 if [[ "$DRY_RUN" == "true" ]]; then
@@ -232,6 +244,15 @@ EOF
     else
       npx -y degit "$REPO_SLUG/skills" "$TMP_DIR/skills" || true
     fi
+  fi
+
+  # Remove Gist publishing workflow if requested not to include
+  if [[ "$INCLUDE_GIST_ACTION" == "false" ]]; then
+    rm -f "$TMP_DIR/.github/workflows/publish-gist.yml"
+    rm -f "$TMP_DIR/scripts/publish-gist.mjs"
+    rmdir "$TMP_DIR/.github/workflows" 2>/dev/null || true
+    rmdir "$TMP_DIR/.github" 2>/dev/null || true
+    rmdir "$TMP_DIR/scripts" 2>/dev/null || true
   fi
 fi
 

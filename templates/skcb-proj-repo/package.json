@@ -11,7 +11,8 @@
     "explain": "skcb explain --profile personal",
     "catalog": "skcb catalog",
     "ui": "skcb-ui --port 3000",
-    "serve": "skcb-ui --port 3000 --serve-only"
+    "serve": "skcb-ui --port 3000 --serve-only",
+    "publish:gist": "node scripts/publish-gist.mjs"
   },
   "dependencies": {
     "@skcb/core": "^0.2.0",

@@ -1,0 +1,89 @@
+name: Publish Profiles to GitHub Gist
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'profiles/**'
+      - 'extensions/**'
+      - 'surfingkeys.workspace.json'
+      - 'scripts/**'
+      - '.github/workflows/publish-gist.yml'
+  workflow_dispatch:
+    inputs:
+      gist_public:
+        description: 'Gist visibility (public or secret)'
+        required: false
+        default: 'public'
+        type: choice
+        options:
+          - 'public'
+          - 'secret'
+      force_run:
+        description: 'Force run publishing'
+        required: false
+        default: true
+        type: boolean
+
+# Actions are DISABLED by default.
+# To enable automated publishing:
+#   1. Set repository variable `GIST_PUBLISH_ENABLED` to `'true'` in:
+#      GitHub Settings -> Secrets and variables -> Actions -> Variables
+#      (or change `ENABLED` below to 'true')
+#   2. Add your GitHub Personal Access Token (classic with 'gist' scope) as repository secret `GIST_TOKEN` in:
+#      GitHub Settings -> Secrets and variables -> Actions -> Secrets
+#   3. (Optional) Set repository variable `GIST_PUBLIC` to `'false'` for a secret (private) Gist. Default is public.
+#   4. (Optional) Set repository variable `GIST_ID` if updating a specific existing Gist.
+
+env:
+  ENABLED: 'false' # Set to 'true' or configure repository variable GIST_PUBLISH_ENABLED='true'
+
+concurrency:
+  group: gist-publish-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish-gist:
+    name: Build & Publish Profiles to Gist
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.GIST_PUBLISH_ENABLED == 'true' || env.ENABLED == 'true' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          elif [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Build all SurfingKeys profiles
+        run: npm run build
+
+      - name: Publish all profiles to GitHub Gist
+        run: node scripts/publish-gist.mjs
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+          GIST_ID: ${{ vars.GIST_ID }}
+          GIST_PUBLIC: ${{ vars.GIST_PUBLIC || (inputs.gist_public == 'secret' && 'false') || 'true' }}
+          GIST_DESCRIPTION: ${{ vars.GIST_DESCRIPTION || format('SurfingKeys Config Profiles ({0})', github.repository) }}
