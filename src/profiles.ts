@@ -22,18 +22,6 @@ export async function resolveProfile(ctx:Context,id:string,catalog:Catalog):Prom
     for(const [key,value] of Object.entries(p.settings??{})) {Object.defineProperty(result.settings,key,{value,writable:true,enumerable:true,configurable:true});result.provenance[`settings.${key}`]=origin;delete result.provenance[`unsetSettings.${key}`];}
     for(const [key,value] of Object.entries(p.leaders??{})) {result.leaders[key as 'site'|'search']=value;result.provenance[`leaders.${key}`]=origin;}
     if(p.overrides) {result.overrides=p.overrides;result.provenance.overrides=origin;}
-    if(p.searchGroups) {
-      if(!result.searchGroups) { result.searchGroups = []; }
-      for(const group of p.searchGroups) {
-        const existingIdx = result.searchGroups.findIndex(g => g.id === group.id);
-        if(existingIdx >= 0) {
-          result.searchGroups[existingIdx] = group;
-        } else {
-          result.searchGroups.push(group);
-        }
-      }
-      result.provenance.searchGroups=origin;
-    }
   }
   if(result.base!=='minimal') {fail('BASE_UNSUPPORTED','Only minimal base is supported');}
   return result;

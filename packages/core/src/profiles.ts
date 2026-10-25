@@ -161,18 +161,6 @@ export async function resolveProfile(ctx: Context, id: string, catalog: Catalog)
       result.overrides = p.overrides;
       result.provenance.overrides = origin;
     }
-    if (p.searchGroups) {
-      if (!result.searchGroups) result.searchGroups = [];
-      for (const group of p.searchGroups) {
-        const existingIdx = result.searchGroups.findIndex(g => g.id === group.id);
-        if (existingIdx >= 0) {
-          result.searchGroups[existingIdx] = group;
-        } else {
-          result.searchGroups.push(group);
-        }
-      }
-      result.provenance.searchGroups = origin;
-    }
   }
 
   if (result.base !== 'minimal') {

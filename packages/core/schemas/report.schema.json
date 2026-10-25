@@ -136,9 +136,6 @@
             },
             "keybindings": {
               "type": "object"
-            },
-            "searchGroups": {
-              "type": "array"
             }
           },
           "required": [
@@ -591,9 +588,6 @@
             },
             "keybindings": {
               "type": "object"
-            },
-            "searchGroups": {
-              "type": "array"
             }
           },
           "required": [

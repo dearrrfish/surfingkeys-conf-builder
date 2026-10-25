@@ -4,7 +4,7 @@ import {readFile, rm, mkdir} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createVisualServer} from '../packages/ui/dist/server.js';
-import {explain, registration} from '../packages/core/dist/index.js';
+import {workspace, loadMetadataCatalog, resolveProfile, explain, registration} from '../packages/core/dist/index.js';
 import type {Profile, EffectiveProfile, Catalog} from '../packages/core/dist/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
