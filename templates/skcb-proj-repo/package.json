@@ -12,11 +12,13 @@
     "catalog": "skcb catalog",
     "ui": "skcb-ui --port 3000",
     "serve": "skcb-ui --port 3000 --serve-only",
+    "pages:build": "skcb-ui --export-static --out .pages",
+    "validate:profiles": "node scripts/validate-profiles.mjs",
     "publish:gist": "node scripts/publish-gist.mjs"
   },
   "dependencies": {
     "@skcb/core": "^0.2.0",
-    "@skcb/ui": "^0.2.0",
+    "@skcb/ui": "^0.3.0",
     "@skcb/lib-b0o": "^0.2.0",
     "@skcb/lib-ent": "^0.2.0",
     "@skcb/lib-tech": "^0.2.0",

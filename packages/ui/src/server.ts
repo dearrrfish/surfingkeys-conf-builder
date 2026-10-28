@@ -6,6 +6,19 @@ import {fileURLToPath} from 'node:url';
 import AjvModule from 'ajv';
 import {workspace, inside, Failure, loadMetadataCatalog, explain, buildWithSelectives} from '@skcb/core';
 import type {Context, Profile} from '@skcb/core';
+import {
+  exportStaticSite,
+  type StaticExportOptions,
+  type StaticProfileMetadata,
+  type StaticExportResult
+} from './static-export.js';
+
+export {
+  exportStaticSite,
+  type StaticExportOptions,
+  type StaticProfileMetadata,
+  type StaticExportResult
+};
 
 const Ajv = AjvModule.default;
 const ajv = new Ajv({allErrors: true, strict: false});
@@ -413,10 +426,25 @@ if (process.argv[1] && process.argv[1].endsWith('server.js')) {
   let serveOnly = false;
   let autoLock = false;
   let token: string | undefined;
+  let exportStatic = false;
+  let outDir: string | undefined;
+  let repository: string | undefined;
+  let baseBranch: string | undefined;
+  let jsonOutput = false;
 
   for (let i = 2; i < process.argv.length; i++) {
     const arg = process.argv[i];
-    if (arg === '--workspace' && process.argv[i + 1]) {
+    if (arg === '--export-static') {
+      exportStatic = true;
+    } else if (arg === '--out' && process.argv[i + 1]) {
+      outDir = process.argv[++i];
+    } else if (arg === '--repository' && process.argv[i + 1]) {
+      repository = process.argv[++i];
+    } else if (arg === '--base-branch' && process.argv[i + 1]) {
+      baseBranch = process.argv[++i];
+    } else if (arg === '--json') {
+      jsonOutput = true;
+    } else if (arg === '--workspace' && process.argv[i + 1]) {
       ws = process.argv[++i];
     } else if (arg === '--port' && process.argv[i + 1]) {
       p = Number(process.argv[++i]);
@@ -431,17 +459,46 @@ if (process.argv[1] && process.argv[1].endsWith('server.js')) {
     }
   }
 
-  createVisualServer({workspacePath: ws, port: p, host: h, serveOnly, token, autoLock})
-    .then(async s => {
-      await s.start();
-      console.log(`⚡ SurfingKeys Visual Configuration Web UI ready: ${s.url}`);
-      console.log(`   Workspace: ${ws}`);
-      if (serveOnly) console.log(`   Mode: --serve-only (read-only script distribution)`);
-      if (token) console.log(`   Auth: Token required`);
-      console.log(`   Press Ctrl+C to stop.`);
-    })
-    .catch(err => {
-      console.error('Failed to start Visual Server:', err);
-      process.exit(1);
-    });
+  if (exportStatic) {
+    if (!outDir) {
+      console.error('Error: --out <dir> is required when using --export-static');
+      process.exitCode = 2;
+    } else {
+      exportStaticSite({
+        workspacePath: ws,
+        outDir,
+        repository,
+        baseBranch
+      })
+        .then(res => {
+          if (jsonOutput) {
+            console.log(JSON.stringify(res, null, 2));
+          } else {
+            console.log(`Exported ${res.files.length} files to ${res.outDir}`);
+          }
+        })
+        .catch((err: any) => {
+          if (err instanceof Failure || err?.diagnostic) {
+            console.error(`Export failed [${err.diagnostic?.code || err.code}]: ${err.diagnostic?.message || err.message}`);
+          } else {
+            console.error('Export failed:', err.message || err);
+          }
+          process.exitCode = err.exitCode ?? 2;
+        });
+    }
+  } else {
+    createVisualServer({workspacePath: ws, port: p, host: h, serveOnly, token, autoLock})
+      .then(async s => {
+        await s.start();
+        console.log(`⚡ SurfingKeys Visual Configuration Web UI ready: ${s.url}`);
+        console.log(`   Workspace: ${ws}`);
+        if (serveOnly) console.log(`   Mode: --serve-only (read-only script distribution)`);
+        if (token) console.log(`   Auth: Token required`);
+        console.log(`   Press Ctrl+C to stop.`);
+      })
+      .catch(err => {
+        console.error('Failed to start Visual Server:', err);
+        process.exit(1);
+      });
+  }
 }

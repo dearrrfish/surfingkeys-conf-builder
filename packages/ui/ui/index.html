@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN" class="dark">
 <head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>@skcb/ui v2.0 — Visual Profile Builder & Config Server (shadcn/ui Prototype)</title>
@@ -1152,6 +1153,11 @@
       <button class="btn btn-outline btn-icon" id="btn-theme-toggle" title="Toggle Dark / Light Theme">
         <span id="theme-icon">🌙</span>
       </button>
+
+      <!-- Help Dialog Trigger -->
+      <button class="btn btn-outline btn-icon" id="btn-help" title="帮助与首次使用指南 / Help & Guide">
+        <span>❓</span>
+      </button>
     </div>
   </header>
 
@@ -1164,6 +1170,15 @@
 
       <!-- VIEW 1: BUILDER VIEW -->
       <div id="view-builder" style="display: flex; flex-direction: column; gap: 1rem;">
+
+        <!-- Static Mode First-Time Guide Banner -->
+        <div id="static-mode-banner" class="alert alert-blue" style="display: none; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.2rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 12.5px;">
+            <span>⚡</span>
+            <span>正在以 <strong>GitHub Pages 静态模式</strong> 运行：配置直接读取，无本地写盘。保存时提供 PAT 直连 PR 或 GitHub 网页模式。</span>
+          </div>
+          <button class="btn btn-outline btn-sm" id="btn-banner-help" style="white-space: nowrap;">📖 使用指南</button>
+        </div>
 
         <!-- Card 1: Profile Metadata, Inheritance & Compile-Time i18n -->
         <section class="card">
@@ -1495,9 +1510,40 @@ npx skcb-ui --workspace ./surfingkeys.workspace.json --port 3000 --auto-lock
 # 模式 B：只读配置分发服务器（禁用写 API 与在线编译，支持 Token 鉴权）
 SKCB_SERVE_TOKEN="my-secret" npx skcb-ui --serve-only --host 0.0.0.0 --port 3000
 
-# 模式 C：导出纯静态托管目录（可一键部署至 GitHub Pages / Cloudflare Pages，因零明文密钥 100% 安全！）
-npx skcb export-pages --out ./pages-dist</pre>
+# 模式 C：导出纯静态 SPA 站点（可一键部署至 GitHub Pages，仅导出公开 Catalog 与元数据，不发布脚本）
+npx skcb-ui --export-static --out .pages</pre>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Static Mode Server Panel (visible in static mode) -->
+        <section class="card" id="server-static-panel" data-static-only style="display: none;">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span>🌐</span>
+                <span>GitHub Pages 静态托管与 PR 同步</span>
+              </div>
+              <div class="card-description">
+                当前站点以静态 SPA 形式托管于 GitHub Pages。为保障配置隐私，静态模式仅导出公开元数据，不发布构建脚本（脚本由本地服务或 Gist 分发）。
+              </div>
+            </div>
+            <span class="badge badge-blue">Static SPA</span>
+          </div>
+          <div class="card-content" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="form-grid-2">
+              <div class="field">
+                <label class="field-label">配置仓库 (Repository)</label>
+                <div id="static-repo-display" style="font-family: var(--font-mono); font-size: 13px; padding: 0.4rem; background: hsl(var(--muted)/0.3); border-radius: var(--radius);">-</div>
+              </div>
+              <div class="field">
+                <label class="field-label">基础分支 (Base Branch)</label>
+                <div id="static-branch-display" style="font-family: var(--font-mono); font-size: 13px; padding: 0.4rem; background: hsl(var(--muted)/0.3); border-radius: var(--radius);">-</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center; margin-top: 0.3rem;">
+              <button class="btn btn-primary btn-save-pr" data-static-only>🚀 保存 Profile 到 GitHub (PR)</button>
             </div>
           </div>
         </section>
@@ -1521,6 +1567,7 @@ npx skcb export-pages --out ./pages-dist</pre>
 
           <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
             <button class="btn btn-outline btn-sm" id="btn-copy-profile" title="Copy Profile v2 JSON">📋 JSON</button>
+            <button class="btn btn-outline btn-sm btn-save-pr" data-static-only style="display: none;">🚀 <span>保存到 GitHub (PR)</span></button>
             <button class="btn btn-primary btn-sm" id="btn-trigger-build">🔨 <span data-i18n="btnBuild">构建并分发脚本</span></button>
           </div>
         </div>
@@ -1642,9 +1689,228 @@ npx skcb export-pages --out ./pages-dist</pre>
   <div style="display:none;" id="legacy-test-compat">SurfingKeys 配置视觉构建器 <button id="tab-create"></button><button id="tab-update"></button> Omni Bar</div>
 
   <!-- ========================================================================
+       Dual-Mode PR & Save Dialog (FR-005, FR-006, FR-008)
+       ======================================================================== -->
+  <div class="dialog-backdrop" id="pr-dialog">
+    <div class="dialog-content" style="max-width: 680px;">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 0.85rem;">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🚀</span>
+            <span id="pr-dialog-title">保存 Profile 到 GitHub (PR)</span>
+          </h3>
+          <p style="font-size: 12.5px; color: hsl(var(--muted-foreground)); margin-top: 0.2rem;" id="pr-dialog-desc">
+            选择保存模式：通过 GitHub API 直连创建 PR，或跳转 GitHub 网页手动提交。
+          </p>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-close-pr-dialog">✕</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.85rem;">
+        <!-- Repo & Branch & Target Path Info -->
+        <div class="form-grid-2">
+          <div class="field">
+            <label class="field-label">GitHub 仓库 (owner/repo)</label>
+            <input type="text" class="input" id="pr-input-repo" placeholder="owner/repo" />
+          </div>
+          <div class="field">
+            <label class="field-label">目标基础分支 (Base Branch)</label>
+            <input type="text" class="input" id="pr-input-branch" placeholder="main" value="main" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">目标文件路径 (Target File)</label>
+          <input type="text" class="input" id="pr-target-path" readonly style="font-family: var(--font-mono); background: hsl(var(--muted)/0.4);" />
+        </div>
+
+        <!-- Save Mode Selector -->
+        <div class="field">
+          <label class="field-label" style="font-weight: 600;">保存模式选择 (Save Mode)</label>
+          <div style="display: flex; gap: 1.5rem; padding: 0.4rem 0.2rem;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 13px;">
+              <input type="radio" name="static-save-mode" id="pr-mode-pat" value="pat" />
+              <strong>🔑 PAT 直连模式</strong> (自动创建分支与 PR)
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 13px;">
+              <input type="radio" name="static-save-mode" id="pr-mode-web" value="web" />
+              <strong>🌐 GitHub 网页模式</strong> (零 Token，网页编辑提交)
+            </label>
+          </div>
+        </div>
+
+        <!-- Mode 1: PAT Section -->
+        <div id="pr-pat-section" style="display: none; flex-direction: column; gap: 0.65rem; border: 1px solid hsl(var(--border)); border-radius: var(--radius); padding: 0.75rem; background: hsl(var(--card));">
+          <div class="field">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+              <label class="field-label" style="margin: 0;">Fine-grained Personal Access Token (PAT)</label>
+              <button class="btn btn-outline btn-sm" id="btn-load-remote-profile" type="button" title="从 GitHub 仓库读取当前 Profile 正文">📥 从仓库加载当前 Profile</button>
+            </div>
+            <input type="password" class="input" id="pr-input-pat" placeholder="github_pat_..." autocomplete="off" />
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 12px; cursor: pointer;">
+              <input type="checkbox" id="pr-check-remember" />
+              <span>记住 PAT 到浏览器本地存储 (localStorage)</span>
+            </label>
+            <button class="btn btn-outline btn-sm" id="btn-clear-pat" type="button" style="color: hsl(var(--destructive));">🗑️ 清除 PAT</button>
+          </div>
+
+          <!-- PAT Security Notice -->
+          <div class="alert alert-amber" style="font-size: 11.5px; line-height: 1.45;">
+            ⚠️ <strong>安全与隐私风险提示</strong>：
+            GitHub Pages 域名（<code>https://&lt;owner&gt;.github.io</code>）下所有项目 Pages 共享同源 <code>localStorage</code>。
+            若同域名下其他项目存在 XSS 漏洞，可能读取已存储的 PAT。
+            建议仅使用 <strong>Fine-grained PAT</strong>，严格限制仓库范围，仅授予 <code>Contents: Read and write</code>、<code>Pull requests: Read and write</code>、<code>Metadata: Read</code> 最低权限，并设置短期有效时间；默认无需勾选“记住 PAT”。
+          </div>
+        </div>
+
+        <!-- Mode 2: Web Section -->
+        <div id="pr-web-section" style="display: none; flex-direction: column; gap: 0.65rem; border: 1px solid hsl(var(--border)); border-radius: var(--radius); padding: 0.75rem; background: hsl(var(--card));">
+          <div style="font-size: 12.5px; line-height: 1.5;">
+            💡 <strong>GitHub 网页模式工作流</strong>：
+            本模式完全不接触、不存储任何 Token，安全可控。点击保存后，当前规范化 Profile JSON 将自动复制到您的剪贴板，并在新标签页中打开 GitHub 网页编辑器。您只需在网页中粘贴、提交到新分支并创建 PR。
+          </div>
+          <div class="alert alert-blue" style="font-size: 11.5px; line-height: 1.45;">
+            📋 <strong>剪贴板提示</strong>：Profile 中可能包含您的私人快捷键或站点配置，内容将复制到操作系统剪贴板。
+          </div>
+
+          <!-- Fallback textarea if clipboard fails -->
+          <div id="pr-web-fallback-container" style="display: none; flex-direction: column; gap: 0.35rem;">
+            <span style="font-size: 12px; font-weight: 600; color: hsl(var(--destructive));">⚠️ 自动写入剪贴板受阻，请手动全选复制下方 JSON 内容：</span>
+            <textarea id="pr-web-fallback-json" class="input" readonly rows="6" style="font-family: var(--font-mono); font-size: 11px;"></textarea>
+          </div>
+
+          <!-- Clickable link fallback if window.open blocked -->
+          <div id="pr-web-link-container" style="display: none; padding: 0.4rem; background: hsl(var(--muted)/0.3); border-radius: var(--radius); font-size: 12px;"></div>
+        </div>
+
+        <!-- Dialog Status Message Area -->
+        <div id="pr-dialog-status" style="font-size: 12px; min-height: 20px;"></div>
+
+        <!-- Dialog Actions -->
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.4rem;">
+          <button class="btn btn-outline" id="btn-cancel-pr-dialog">取消</button>
+          <button class="btn btn-primary" id="btn-submit-pr">创建 PR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Help & First-Time Guide Dialog (FR-014)
+       ======================================================================== -->
+  <div class="dialog-backdrop" id="help-dialog">
+    <div class="dialog-content" style="max-width: 720px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 0.85rem;">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            <span>📖</span>
+            <span id="help-title">SurfingKeys 配置构建器 · 使用帮助与安全指南</span>
+          </h3>
+          <p style="font-size: 12.5px; color: hsl(var(--muted-foreground)); margin-top: 0.2rem;" id="help-subtitle">
+            了解 GitHub Pages 静态模式、保存模式、PAT 权限配置与安全注意事项。
+          </p>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-close-help-dialog">✕</button>
+      </div>
+
+      <div style="overflow-y: auto; display: flex; flex-direction: column; gap: 1.1rem; padding: 0.9rem 0.2rem;">
+        <!-- Section 1: Quick Start -->
+        <section>
+          <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 0.35rem;">1. 快速开始工作流 (Quick Start)</h4>
+          <p style="font-size: 12.5px; line-height: 1.5; color: hsl(var(--muted-foreground));">
+            在 GitHub Pages 上打开站点后：选择或新建 Profile → 在左侧定制功能模组与细粒度按键 → 在右侧检视有效键位与冲突 → 点击「保存到 GitHub (PR)」选择保存模式发起 PR → 合并 PR 后由 GitHub Actions 自动重新构建并部署 Pages。
+          </p>
+        </section>
+
+        <!-- Section 2: Fine-grained PAT -->
+        <section>
+          <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 0.35rem;">2. Fine-grained PAT 创建与最小权限 (PAT Permissions)</h4>
+          <p style="font-size: 12.5px; line-height: 1.5; color: hsl(var(--muted-foreground)); margin-bottom: 0.35rem;">
+            若使用 PAT 直连模式，请前往 GitHub 创建细粒度 Token：
+            <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener noreferrer" style="color: hsl(var(--primary)); text-decoration: underline;">GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens</a>
+          </p>
+          <ul style="font-size: 12px; line-height: 1.6; margin-left: 1.2rem; color: hsl(var(--muted-foreground));">
+            <li><strong>Repository access</strong>: 仅选择配置仓库 (Only select repositories)</li>
+            <li><strong>Contents</strong>: <code>Read and write</code> (用于读取 profile 正文及提交分支)</li>
+            <li><strong>Pull requests</strong>: <code>Read and write</code> (用于发起 Pull Request)</li>
+            <li><strong>Metadata</strong>: <code>Read-only</code> (GitHub 默认强制开启)</li>
+            <li><strong>有效期</strong>: 建议设置短期有效期 (例如 7 或 30 天)</li>
+          </ul>
+        </section>
+
+        <!-- Section 3: Pages Setup -->
+        <section>
+          <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 0.35rem;">3. GitHub Pages 启用步骤 (Pages Setup)</h4>
+          <p style="font-size: 12.5px; line-height: 1.5; color: hsl(var(--muted-foreground));">
+            配置仓库默认包含 Pages workflow 文件，但部署默认处于关闭状态。启用步骤：<br/>
+            ① 进入仓库 <code>Settings → Pages</code>，将 <code>Source</code> 设置为 <strong>GitHub Actions</strong>；<br/>
+            ② 进入仓库 <code>Settings → Secrets and variables → Actions → Variables</code>，新增变量 <code>PAGES_DEPLOY_ENABLED=true</code>（或在 Actions 页面手动运行 dispatch）；<br/>
+            ③ 后续任何合并到 <code>main</code> 分支的 PR 将自动触发静态站点导出与部署。
+          </p>
+        </section>
+
+        <!-- Section 4: Dual Save Modes -->
+        <section>
+          <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 0.35rem;">4. 双保存模式对比 (Dual Save Modes)</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; font-size: 12px;">
+            <div class="card" style="padding: 0.6rem;">
+              <div style="font-weight: 600; margin-bottom: 0.2rem;">🔑 PAT 直连模式</div>
+              <div style="color: hsl(var(--muted-foreground));">浏览器直连 GitHub API，自动创建分支、提交并生成 PR 链接。适合拥有 PAT 且追求效率的仓库所有者。</div>
+            </div>
+            <div class="card" style="padding: 0.6rem;">
+              <div style="font-weight: 600; margin-bottom: 0.2rem;">🌐 GitHub 网页模式</div>
+              <div style="color: hsl(var(--muted-foreground));">无需提供 Token。规范化 JSON 自动复制到剪贴板并跳转 GitHub 网页编辑新建页，由您在 GitHub 网页上登录并提交。</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 5: Security & Privacy -->
+        <section>
+          <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 0.35rem;">5. 安全与隐私风险 (Security & Privacy)</h4>
+          <div class="alert alert-amber" style="font-size: 12px; line-height: 1.5;">
+            • <strong>公开数据最小化</strong>：GitHub Pages 站点是完全公开的（即使源仓库是私有仓库）。为保障您的配置安全，本站静态导出仅包含公开 Catalog 与 Profile 元数据（ID、继承关系等），绝不导出 Profile 正文、按键细节或本地构建脚本。<br/>
+            • <strong>localStorage 共享风险</strong>：在 <code>https://&lt;owner&gt;.github.io</code> 下，同账号的所有 Pages 共享相同 localStorage 域。如非必要，切勿勾选“记住 PAT”；离开电脑或公用设备时，请点击「清除 PAT」。
+          </div>
+        </section>
+
+        <!-- Section 6: Common Errors & Recovery -->
+        <section>
+          <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 0.35rem;">6. 常见错误与故障恢复 (Errors & Recovery)</h4>
+          <ul style="font-size: 12px; line-height: 1.6; margin-left: 1.2rem; color: hsl(var(--muted-foreground));">
+            <li><strong>401 Unauthorized</strong>：Token 已过期或错误，请重新生成并输入。</li>
+            <li><strong>403 Forbidden / Rate limit</strong>：Token 缺少权限或触发 GitHub API 速率上限（每小时 5000 次），请检查 Token 权限或稍候重试。</li>
+            <li><strong>404 Not Found</strong>：仓库或基础分支不存在，或 Token 无权访问该私有仓库。</li>
+            <li><strong>409 / 422 冲突或已存在</strong>：远端文件已被修改或已有同名分支/PR；重新加载最新配置后再提交，或直接访问生成的恢复 Compare 链接。</li>
+            <li><strong>弹窗被拦截 (Popup Blocked)</strong>：若浏览器拦截了 GitHub 跳转，弹层内将显示直接点击的超链接。</li>
+            <li><strong>剪贴板写入失败</strong>：若浏览器禁止访问剪贴板，弹层将显示 JSON 文本框供您手动全选复制。</li>
+          </ul>
+        </section>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; padding-top: 0.6rem; border-top: 1px solid hsl(var(--border));">
+        <button class="btn btn-primary" id="btn-done-help">我知道了 (Close)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Static Config Injection Placeholder (Static Mode) -->
+  <script id="skcb-static-config" type="application/json">{}</script>
+
+  <!-- ========================================================================
        Interactive Prototype State & Logic
        ======================================================================== -->
   <script>
+    // Static Mode Configuration Detection (Wave 1)
+    const STATIC = (() => {
+      try {
+        const cfg = JSON.parse(document.getElementById('skcb-static-config')?.textContent || '{}');
+        return cfg.mode === 'static' ? cfg : null;
+      } catch { return null; }
+    })();
+
     // 1. Bilingual UI Dictionary (FR-013)
     const I18N = {
       "zh-CN": {
@@ -2065,7 +2331,519 @@ npx skcb export-pages --out ./pages-dist</pre>
         },
         overrides: [],
         keybindings: {}
+      },
+      staticProfiles: new Map(),
+      github: {
+        token: '',
+        remember: false,
+        repo: STATIC?.repository || '',
+        baseBranch: STATIC?.baseBranch || 'main',
+        remoteSha: null,
+        remoteRaw: null,
+        remotePath: null,
+        remoteProfile: null,
+        loadedFromRepo: false
       }
+    };
+
+    // Helper functions for Static GitHub SPA mode
+    function getPatStorageKey(repo) {
+      if (repo && repo.includes('/')) {
+        return `skcb.github.pat.${repo}`;
+      }
+      return 'skcb.github.pat';
+    }
+
+    function loadStoredPat(repo) {
+      try {
+        const key = getPatStorageKey(repo);
+        const token = localStorage.getItem(key) || (key !== 'skcb.github.pat' ? localStorage.getItem('skcb.github.pat') : null);
+        return token || '';
+      } catch {
+        return '';
+      }
+    }
+
+    function utf8ToBase64(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    function utf8FromBase64(base64Str) {
+      const binary = atob(base64Str.replace(/\s/g, ''));
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new TextDecoder().decode(bytes);
+    }
+
+    async function sha256Hex(text) {
+      const enc = new TextEncoder();
+      const data = enc.encode(text);
+      const subtle = (window.crypto && window.crypto.subtle) || (typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle);
+      if (subtle) {
+        try {
+          const buf = await subtle.digest('SHA-256', data);
+          return Array.from(new Uint8Array(buf))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+        } catch {}
+      }
+      let h1 = 0x811c9dc5, h2 = 0x27d4eb2f;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 0x01000193);
+        h2 = Math.imul(h2 ^ ch, 0x5bd1e995);
+      }
+      return ((h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0')).slice(0, 12).padEnd(12, '0');
+    }
+
+    function buildCleanProfile(p = state.profile) {
+      return {
+        schemaVersion: 2,
+        id: p.id,
+        ...(p.abstract ? { abstract: true } : {}),
+        ...(p.extends ? { extends: p.extends } : {}),
+        base: "minimal",
+        locale: p.locale || "zh-CN",
+        selectAdd: [...(p.selectAdd || [])],
+        ...(p.selectRemove && p.selectRemove.length ? { selectRemove: [...p.selectRemove] } : {}),
+        ...(p.selectRemoveContributions && p.selectRemoveContributions.length ? { selectRemoveContributions: [...p.selectRemoveContributions] } : {}),
+        conflictResolution: {
+          mode: p.conflictResolution?.mode || "module-precedence",
+          modulePrecedence: [...(p.conflictResolution?.modulePrecedence || ["tech", "ent", "prod", "b0o"])]
+        },
+        leaders: {
+          site: p.leaders?.site || "<Space>",
+          search: p.leaders?.search || "a"
+        },
+        settings: { ...(p.settings || {}) },
+        ...(p.keybindings && Object.keys(p.keybindings).length ? { keybindings: { ...p.keybindings } } : {}),
+        ...(p.overrides && p.overrides.length ? { overrides: [...p.overrides] } : {})
+      };
+    }
+
+    function canonicalProfileString(profile) {
+      return JSON.stringify(buildCleanProfile(profile), null, 2) + '\n';
+    }
+
+    function formatGithubError(err) {
+      if (err.code === 'ALREADY_EXISTS') return err.error;
+      if (err.code === 'REMOTE_CHANGED') return err.error;
+      if (err.code === 'TOKEN_REQUIRED') return '请输入 GitHub Personal Access Token (PAT)';
+      if (err.code === 'INVALID_REPO') return '请输入有效的仓库名称 (owner/repo)';
+      if (err.code === 'PR_CREATE_FAILED') {
+        return `提交已完成到分支 <code>${err.branch}</code>，但创建 PR 失败。请访问以下链接手动创建 PR：<br/><a href="${err.compareUrl}" target="_blank" rel="noopener noreferrer">${err.compareUrl}</a>`;
+      }
+      const status = err.status;
+      if (status === 401) {
+        return '401 Unauthorized: PAT 无效或已过期，请检查 Token 权限';
+      }
+      if (status === 403) {
+        if (err.rateLimitRemaining === '0') {
+          const resetTime = err.rateLimitReset ? new Date(Number(err.rateLimitReset) * 1000).toLocaleTimeString() : '稍后';
+          return `403 Forbidden: 已触发 GitHub API 请求频率限制 (Rate limit)，将在 ${resetTime} 重置，请稍后再试`;
+        }
+        return '403 Forbidden: PAT 权限不足。请确保 Fine-grained Token 具备 Contents: Read and write、Pull requests: Read and write、Metadata: Read 权限';
+      }
+      if (status === 404) {
+        return '404 Not Found: 目标仓库或基础分支不存在，或 PAT 无权访问该私有仓库';
+      }
+      if (status === 409) {
+        return '409 Conflict: 远端产生冲突，请重新加载后再试';
+      }
+      if (status === 422) {
+        return '422 Unprocessable Entity: 分支或 PR 请求参数不合法，或目标分支不存在变更';
+      }
+      if (status === 429) {
+        return '429 Too Many Requests: 请求过于频繁，请稍候重试';
+      }
+      if (err.message && (err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Failed to fetch'))) {
+        return '网络连接失败，请检查网络后重试';
+      }
+      return `操作失败: ${err.message || String(err)}`;
+    }
+
+    function clearPat() {
+      state.github.token = '';
+      state.github.remember = false;
+      const patInput = document.getElementById('pr-input-pat');
+      if (patInput) patInput.value = '';
+      const rememberCheck = document.getElementById('pr-check-remember');
+      if (rememberCheck) rememberCheck.checked = false;
+      try {
+        const repo = state.github.repo || STATIC?.repository || '';
+        localStorage.removeItem(getPatStorageKey(repo));
+        localStorage.removeItem('skcb.github.pat');
+      } catch {}
+      showToast(state.uiLang === 'zh-CN' ? '✅ PAT 已清除' : '✅ PAT cleared');
+    }
+
+    // GitHub API Client & Static Mode controller (window.SkcbStatic)
+    async function ghRequest(apiPath, options = {}) {
+      const method = options.method || 'GET';
+      const cleanPath = apiPath.startsWith('/') ? apiPath : `/${apiPath}`;
+      const url = `https://api.github.com${cleanPath}`;
+      const headers = {
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        ...(options.token ? { 'Authorization': `Bearer ${options.token}` } : {})
+      };
+      if (options.body) {
+        headers['Content-Type'] = 'application/json';
+      }
+
+      const res = await fetch(url, {
+        method,
+        headers,
+        credentials: 'omit',
+        referrerPolicy: 'no-referrer',
+        body: options.body ? JSON.stringify(options.body) : undefined
+      });
+
+      const remaining = res.headers?.get ? res.headers.get('x-ratelimit-remaining') : null;
+      const reset = res.headers?.get ? res.headers.get('x-ratelimit-reset') : null;
+
+      let data = null;
+      const text = await res.text();
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        data = text;
+      }
+
+      if (!res.ok) {
+        const error = new Error(
+          (data && data.message) ? data.message : `GitHub API error: ${res.status} ${res.statusText}`
+        );
+        error.status = res.status;
+        error.data = data;
+        error.rateLimitRemaining = remaining;
+        error.rateLimitReset = reset;
+        throw error;
+      }
+
+      return { status: res.status, data, headers: res.headers };
+    }
+
+    async function loadProfileFromRepo(id) {
+      const repo = state.github.repo || STATIC?.repository || '';
+      const baseBranch = state.github.baseBranch || STATIC?.baseBranch || 'main';
+      const token = state.github.token;
+
+      if (!token) {
+        throw new Error('PAT token is required');
+      }
+      if (!repo || !repo.includes('/')) {
+        throw new Error('Valid repository (owner/repo) is required');
+      }
+
+      const meta = state.staticProfiles.get(id);
+      const targetPath = meta?.file || `profiles/${id}.json`;
+
+      const { data } = await ghRequest(
+        `/repos/${repo}/contents/${targetPath.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(baseBranch)}`,
+        { token }
+      );
+
+      const utf8Str = utf8FromBase64(data.content);
+      const profileObj = JSON.parse(utf8Str);
+
+      state.profile = {
+        ...state.profile,
+        ...profileObj,
+        conflictResolution: {
+          ...state.profile.conflictResolution,
+          ...(profileObj.conflictResolution || {})
+        },
+        settings: {
+          ...state.profile.settings,
+          ...(profileObj.settings || {})
+        },
+        leaders: {
+          ...state.profile.leaders,
+          ...(profileObj.leaders || {})
+        },
+        keybindings: profileObj.keybindings || {},
+        selectAdd: profileObj.selectAdd || profileObj.select || [],
+        selectRemove: profileObj.selectRemove || [],
+        selectRemoveContributions: profileObj.selectRemoveContributions || [],
+        overrides: profileObj.overrides || []
+      };
+
+      document.getElementById("input-profile-id").value = state.profile.id;
+      document.getElementById("input-profile-extends").value = state.profile.extends || '';
+      document.getElementById("input-profile-locale").value = state.profile.locale || 'zh-CN';
+      document.getElementById("select-conflict-mode").value = state.profile.conflictResolution?.mode || 'module-precedence';
+      document.getElementById("switch-abstract").setAttribute("aria-checked", String(!!state.profile.abstract));
+
+      state.github.remoteSha = data.sha;
+      state.github.remoteRaw = utf8Str;
+      state.github.remotePath = targetPath;
+      state.github.remoteProfile = profileObj;
+      state.github.loadedFromRepo = true;
+
+      renderAll();
+      showToast(state.uiLang === 'zh-CN' ? '✅ 已从 GitHub 加载 profile 正文' : '✅ Loaded profile from GitHub repo');
+      return { ok: true, profile: profileObj, sha: data.sha, path: targetPath };
+    }
+
+    async function saveProfilePR() {
+      const repo = state.github.repo || STATIC?.repository || '';
+      const baseBranchInput = state.github.baseBranch || STATIC?.baseBranch || 'main';
+      const token = state.github.token;
+
+      if (!token) {
+        return { ok: false, code: 'TOKEN_REQUIRED', error: 'PAT token is required' };
+      }
+      if (!repo || !repo.includes('/')) {
+        return { ok: false, code: 'INVALID_REPO', error: 'Repository must be in owner/repo format' };
+      }
+      if (!state.profile.id) {
+        return { ok: false, code: 'INVALID_ID', error: 'Profile ID is required' };
+      }
+
+      const [owner, name] = repo.split('/');
+      let baseBranch = baseBranchInput;
+
+      // 1. GET repo to verify and get default branch if needed
+      const repoRes = await ghRequest(`/repos/${owner}/${name}`, { token });
+      if (!baseBranch) {
+        baseBranch = repoRes.data.default_branch || 'main';
+      }
+
+      // 2. GET base branch ref
+      const refRes = await ghRequest(`/repos/${owner}/${name}/git/ref/heads/${encodeURIComponent(baseBranch)}`, { token });
+      const baseSha = refRes.data.object.sha;
+
+      // 3. GET contents of target path
+      const meta = state.staticProfiles.get(state.profile.id);
+      const targetPath = meta?.file || `profiles/${state.profile.id}.json`;
+
+      let remoteData = null;
+      try {
+        const contentRes = await ghRequest(
+          `/repos/${owner}/${name}/contents/${targetPath.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(baseBranch)}`,
+          { token }
+        );
+        remoteData = contentRes.data;
+      } catch (err) {
+        if (err.status !== 404) throw err;
+      }
+
+      const currentCanonical = canonicalProfileString(state.profile);
+
+      if (remoteData) {
+        const remoteUtf8 = utf8FromBase64(remoteData.content);
+        const remoteObj = JSON.parse(remoteUtf8);
+        const remoteCanonical = canonicalProfileString(remoteObj);
+
+        // If file exists on remote but user didn't load it
+        if (!state.github.loadedFromRepo || state.github.remotePath !== targetPath) {
+          return { ok: false, code: 'ALREADY_EXISTS', error: '远端已存在同名 profile，请先加载后再编辑，避免覆盖' };
+        }
+
+        // If remote file changed since loaded
+        if (state.github.remoteRaw) {
+          const storedCanonical = canonicalProfileString(JSON.parse(state.github.remoteRaw));
+          if (storedCanonical !== remoteCanonical) {
+            return { ok: false, code: 'REMOTE_CHANGED', error: '远端文件已变化，请重新加载后再提交' };
+          }
+        }
+
+        // If no changes compared to remote
+        if (currentCanonical === remoteCanonical) {
+          return { ok: true, noop: true, message: '配置无变化，无需创建 PR' };
+        }
+      }
+
+      // 4. Create deterministic branch name
+      const hash = (await sha256Hex(currentCanonical)).slice(0, 12);
+      const baseBranchName = `skcb/profile/${state.profile.id}-${hash}`;
+      let branchName = baseBranchName;
+      let branchNeedsCommit = true;
+
+      try {
+        await ghRequest(`/repos/${owner}/${name}/git/refs`, {
+          method: 'POST',
+          token,
+          body: {
+            ref: `refs/heads/${branchName}`,
+            sha: baseSha
+          }
+        });
+      } catch (err) {
+        if (err.status === 422) {
+          // Branch exists; check if it has the identical content
+          try {
+            const branchContent = await ghRequest(
+              `/repos/${owner}/${name}/contents/${targetPath.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(branchName)}`,
+              { token }
+            );
+            const branchUtf8 = utf8FromBase64(branchContent.data.content);
+            if (canonicalProfileString(JSON.parse(branchUtf8)) === currentCanonical) {
+              branchNeedsCommit = false;
+            } else {
+              branchName = `${baseBranchName}-${Date.now().toString(36)}`;
+              await ghRequest(`/repos/${owner}/${name}/git/refs`, {
+                method: 'POST',
+                token,
+                body: { ref: `refs/heads/${branchName}`, sha: baseSha }
+              });
+            }
+          } catch {
+            branchName = `${baseBranchName}-${Date.now().toString(36)}`;
+            await ghRequest(`/repos/${owner}/${name}/git/refs`, {
+              method: 'POST',
+              token,
+              body: { ref: `refs/heads/${branchName}`, sha: baseSha }
+            });
+          }
+        } else {
+          throw err;
+        }
+      }
+
+      // 5. Commit to branch
+      const isUpdate = Boolean(remoteData);
+      if (branchNeedsCommit) {
+        const putBody = {
+          message: `${isUpdate ? 'chore(profiles): update ' : 'chore(profiles): add '}${state.profile.id}`,
+          content: utf8ToBase64(currentCanonical),
+          branch: branchName,
+          ...(remoteData?.sha ? { sha: remoteData.sha } : {})
+        };
+        await ghRequest(
+          `/repos/${owner}/${name}/contents/${targetPath.split('/').map(encodeURIComponent).join('/')}`,
+          {
+            method: 'PUT',
+            token,
+            body: putBody
+          }
+        );
+      }
+
+      // 6. Create PR
+      const prBody = {
+        title: `${isUpdate ? 'chore(profiles): update ' : 'chore(profiles): add '}${state.profile.id}`,
+        head: branchName,
+        base: baseBranch,
+        body: `### SurfingKeys Profile PR\n\n- Profile: \`${state.profile.id}\`\n- Mode: \`${isUpdate ? 'update' : 'add'}\`\n- Generated by @skcb/ui static SPA\n\nWaiting for PR merge to trigger Pages workflow deploy.`
+      };
+
+      try {
+        const prRes = await ghRequest(`/repos/${owner}/${name}/pulls`, {
+          method: 'POST',
+          token,
+          body: prBody
+        });
+        return { ok: true, prUrl: prRes.data.html_url, branch: branchName, reused: false };
+      } catch (prErr) {
+        if (prErr.status === 422) {
+          try {
+            const pullsRes = await ghRequest(
+              `/repos/${owner}/${name}/pulls?head=${encodeURIComponent(owner + ':' + branchName)}&state=open`,
+              { token }
+            );
+            if (Array.isArray(pullsRes.data) && pullsRes.data.length > 0) {
+              return { ok: true, prUrl: pullsRes.data[0].html_url, branch: branchName, reused: true };
+            }
+          } catch {}
+        }
+        const compareUrl = `https://github.com/${owner}/${name}/compare/${encodeURIComponent(baseBranch)}...${encodeURIComponent(branchName)}?expand=1`;
+        return {
+          ok: false,
+          code: 'PR_CREATE_FAILED',
+          branch: branchName,
+          compareUrl,
+          error: prErr.message
+        };
+      }
+    }
+
+    async function openGitHubWebSave(profile = state.profile) {
+      const repo = state.github.repo || STATIC?.repository || '';
+      const baseBranch = state.github.baseBranch || STATIC?.baseBranch || 'main';
+
+      if (!repo || !repo.includes('/')) {
+        throw new Error('Valid repository (owner/repo) is required');
+      }
+
+      const isExisting = state.staticProfiles.has(profile.id);
+      const meta = state.staticProfiles.get(profile.id);
+      const targetPath = meta?.file || `profiles/${profile.id}.json`;
+
+      let url = '';
+      let copied = false;
+      let jsonText = '';
+
+      if (isExisting && !state.github.loadedFromRepo) {
+        // Do NOT copy default JSON to clipboard!
+        url = `https://github.com/${repo}/edit/${encodeURIComponent(baseBranch)}/${targetPath}`;
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        const popupBlocked = !win;
+        return {
+          mode: 'web',
+          action: 'edit-unloaded',
+          url,
+          copied: false,
+          popupBlocked
+        };
+      }
+
+      jsonText = canonicalProfileString(profile);
+
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(jsonText);
+          copied = true;
+        }
+      } catch {
+        copied = false;
+      }
+
+      if (isExisting && state.github.loadedFromRepo) {
+        url = `https://github.com/${repo}/edit/${encodeURIComponent(baseBranch)}/${targetPath}`;
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        const popupBlocked = !win;
+        return {
+          mode: 'web',
+          action: 'edit-loaded',
+          url,
+          copied,
+          popupBlocked,
+          json: jsonText
+        };
+      }
+
+      // New profile
+      url = `https://github.com/${repo}/new/${encodeURIComponent(baseBranch)}?filename=${encodeURIComponent(targetPath)}`;
+      const win = window.open(url, '_blank', 'noopener,noreferrer');
+      const popupBlocked = !win;
+      return {
+        mode: 'web',
+        action: 'new',
+        url,
+        copied,
+        popupBlocked,
+        json: jsonText
+      };
+    }
+
+    window.SkcbStatic = {
+      ghRequest,
+      sha256Hex,
+      buildCleanProfile,
+      canonicalProfileString,
+      loadProfileFromRepo,
+      saveProfilePR,
+      openGitHubWebSave,
+      clearPat
     };
 
     const PRESETS = {
@@ -2414,6 +3192,7 @@ npx skcb export-pages --out ./pages-dist</pre>
     };
 
     window.syncProfileToServer = function() {
+      if (STATIC) return;
       if (!window.location.protocol.startsWith('http')) return;
       fetch('/api/profiles/save', {
         method: 'POST',
@@ -3237,6 +4016,24 @@ npx skcb export-pages --out ./pages-dist</pre>
       renderLibPills();
       renderCatalog();
       renderInspector();
+
+      if (STATIC) {
+        const pill = document.getElementById("ui-server-pill");
+        if (pill) {
+          pill.textContent = state.uiLang === "zh-CN" ? "GitHub Pages 静态模式" : "GitHub Pages Static Mode";
+        }
+        const banner = document.getElementById("static-mode-banner");
+        if (banner) banner.style.display = "flex";
+
+        const repoDisplay = document.getElementById("static-repo-display");
+        if (repoDisplay) repoDisplay.textContent = state.github.repo || STATIC.repository || '未指定';
+        const branchDisplay = document.getElementById("static-branch-display");
+        if (branchDisplay) branchDisplay.textContent = state.github.baseBranch || STATIC.baseBranch || 'main';
+
+        document.querySelectorAll("[data-static-only]").forEach(el => el.style.display = "");
+      } else {
+        document.querySelectorAll("[data-static-only]").forEach(el => el.style.display = "none");
+      }
     }
 
     function showToast(msg) {
@@ -3290,6 +4087,39 @@ npx skcb export-pages --out ./pages-dist</pre>
 
       // Preset switcher
       document.getElementById("preset-profile-switcher").addEventListener("change", (e) => {
+        if (STATIC) {
+          const profileId = e.target.value;
+          const meta = state.staticProfiles.get(profileId);
+          if (meta) {
+            state.profile.id = meta.id;
+            if (meta.extends) state.profile.extends = meta.extends;
+            if (meta.locale) state.profile.locale = meta.locale;
+            state.profile.abstract = Boolean(meta.abstract);
+            document.getElementById("input-profile-id").value = meta.id;
+            if (meta.extends) document.getElementById("input-profile-extends").value = meta.extends;
+            if (meta.locale) document.getElementById("input-profile-locale").value = meta.locale;
+            document.getElementById("switch-abstract").setAttribute("aria-checked", String(meta.abstract));
+          }
+          if (state.github.token) {
+            window.SkcbStatic.loadProfileFromRepo(profileId).catch(err => {
+              showToast(`加载远端 profile 失败: ${err.message}`);
+            });
+          } else {
+            state.github.loadedFromRepo = false;
+            state.github.remotePath = meta?.file || `profiles/${profileId}.json`;
+            state.github.remoteSha = null;
+            state.github.remoteRaw = null;
+            state.github.remoteProfile = null;
+            renderAll();
+            const alertEl = document.getElementById('live-diagnostics-alert');
+            if (alertEl) {
+              alertEl.className = 'alert alert-amber';
+              alertEl.innerHTML = `⚠️ <strong>静态模式</strong>：Profile <code>${profileId}</code> 正文未公开在 Pages 站点中。请在「保存到 GitHub」弹层中输入 PAT 点击加载，或使用「GitHub 网页模式」直接在 GitHub 编辑。`;
+            }
+          }
+          return;
+        }
+
         const p = PRESETS[e.target.value];
         if (!p) return;
         state.profile.id = p.id;
@@ -3448,6 +4278,69 @@ npx skcb export-pages --out ./pages-dist</pre>
         copyText(document.getElementById("live-profile-json").textContent);
       });
 
+    function mergeCatalogEntries(remoteEntries) {
+      if (!Array.isArray(remoteEntries)) return false;
+      let updated = false;
+      remoteEntries.forEach(remoteEntry => {
+        const normalizedId = remoteEntry.id;
+        const b0oAlias = normalizedId.startsWith('upstream/') ? normalizedId.replace(/^upstream\//, 'b0o/') : normalizedId;
+        const existing = CATALOG.find(e => e.id === normalizedId || e.id === b0oAlias);
+        const namespace = normalizedId.split('/')[0] || 'custom';
+        const localId = normalizedId.split('/')[1] || normalizedId;
+        const cat = localId.startsWith('actions.')
+          ? 'actions'
+          : (localId.startsWith('search-engines.') || localId.startsWith('search.'))
+          ? 'search-engines'
+          : (localId.startsWith('omnibar.') || localId.startsWith('omnibar'))
+          ? 'omnibar'
+          : 'actions';
+
+        const contributions = (remoteEntry.contributions || []).map(c => ({
+          id: c.id,
+          alias: c.alias || '',
+          defaultAlias: c.alias || '',
+          kind: c.kind || 'mapkey',
+          domain: c.domain || (cat === 'search-engines' ? 'global' : 'global'),
+          leaderFree: !!c.leaderFree,
+          callbackRequired: !!c.callbackRequired,
+          desc: {
+            'zh-CN': resolveDesc(c.description || c.desc, 'zh-CN') || c.id,
+            'en': resolveDesc(c.description || c.desc, 'en') || c.id
+          }
+        }));
+
+        if (!existing) {
+          const entryDesc = {
+            'zh-CN': resolveDesc(remoteEntry.description || remoteEntry.desc, 'zh-CN') || normalizedId,
+            'en': resolveDesc(remoteEntry.description || remoteEntry.desc, 'en') || normalizedId
+          };
+          CATALOG.push({
+            id: normalizedId,
+            lib: namespace === 'upstream' ? 'b0o' : namespace,
+            pkg: `@skcb/lib-${namespace === 'upstream' ? 'b0o' : namespace}`,
+            category: cat,
+            domain: contributions[0]?.domain || (cat === 'search-engines' ? 'global' : 'global'),
+            desc: entryDesc,
+            capabilities: remoteEntry.capabilities || [],
+            requires: remoteEntry.requires || [],
+            secrets: remoteEntry.secrets || [],
+            contributions: contributions
+          });
+          updated = true;
+        } else {
+          if (contributions.length > 0) {
+            existing.contributions = contributions;
+            existing.category = cat;
+            updated = true;
+          }
+        }
+      });
+      if (updated) {
+        renderAll();
+      }
+      return updated;
+    }
+
       // Build & Distribute Modal with real backend compile
       document.getElementById("btn-trigger-build").addEventListener("click", async () => {
         const res = computeResolution();
@@ -3455,6 +4348,14 @@ npx skcb export-pages --out ./pages-dist</pre>
         const keys = res.activeContribs.length - searches;
         document.getElementById("modal-metric-profile").textContent = `${state.profile.id} (${state.profile.locale})`;
         document.getElementById("modal-metric-counts").textContent = `${keys} keys · ${searches} searches`;
+
+        if (STATIC) {
+          document.getElementById("modal-subscribe-url").value = 'https://github.com/' + (state.github.repo || STATIC.repository || 'owner/repo');
+          document.getElementById("modal-compiled-js").textContent = '// GitHub Pages 静态模式：静态站点不提供服务端 Node 构建环境。\n// 配置合并 PR 后由 GitHub Actions 自动化校验与更新站点；SurfingKeys 脚本由本地服务或 Gist 分发。\n\n' + canonicalProfileString(state.profile);
+          document.getElementById("build-dialog").classList.add("open");
+          return;
+        }
+
         const serverOrigin = window.location.protocol.startsWith('http') ? window.location.origin : 'http://127.0.0.1:3000';
         document.getElementById("modal-subscribe-url").value = `${serverOrigin}/script/${state.profile.id}`;
         document.getElementById("modal-compiled-js").textContent = '// 正在通过 @skcb/core 编译器进行确定性打包编译...';
@@ -3502,8 +4403,251 @@ npx skcb export-pages --out ./pages-dist</pre>
         copyText(document.getElementById("modal-compiled-js").textContent);
       });
 
-      // Sync with live skcb-ui backend if running via HTTP
-      if (window.location.protocol.startsWith('http')) {
+      // Dialog Helpers
+      function openPrDialog() {
+        const repoInput = document.getElementById("pr-input-repo");
+        const branchInput = document.getElementById("pr-input-branch");
+        const pathInput = document.getElementById("pr-target-path");
+        const patInput = document.getElementById("pr-input-pat");
+        const rememberCheck = document.getElementById("pr-check-remember");
+        const statusEl = document.getElementById("pr-dialog-status");
+
+        repoInput.value = state.github.repo || STATIC?.repository || '';
+        branchInput.value = state.github.baseBranch || STATIC?.baseBranch || 'main';
+
+        const meta = state.staticProfiles.get(state.profile.id);
+        pathInput.value = meta?.file || `profiles/${state.profile.id}.json`;
+
+        statusEl.innerHTML = '';
+        document.getElementById("pr-web-fallback-container").style.display = 'none';
+        document.getElementById("pr-web-link-container").style.display = 'none';
+
+        const stored = loadStoredPat(repoInput.value.trim());
+        const effectivePat = state.github.token || stored;
+        if (effectivePat) {
+          patInput.value = effectivePat;
+          state.github.token = effectivePat;
+          if (stored) {
+            rememberCheck.checked = true;
+            state.github.remember = true;
+          }
+          document.getElementById("pr-mode-pat").checked = true;
+        } else {
+          patInput.value = '';
+          rememberCheck.checked = false;
+          document.getElementById("pr-mode-web").checked = true;
+        }
+        updatePrDialogMode();
+        document.getElementById("pr-dialog").classList.add("open");
+      }
+
+      function closePrDialog() {
+        document.getElementById("pr-dialog").classList.remove("open");
+      }
+
+      function updatePrDialogMode() {
+        const mode = document.querySelector('input[name="static-save-mode"]:checked')?.value || 'pat';
+        document.getElementById("pr-pat-section").style.display = mode === 'pat' ? 'flex' : 'none';
+        document.getElementById("pr-web-section").style.display = mode === 'web' ? 'flex' : 'none';
+        document.getElementById("btn-submit-pr").textContent = mode === 'pat' ? '创建 PR' : '在 GitHub 中编辑';
+      }
+
+      function openHelpDialog() {
+        document.getElementById("help-dialog").classList.add("open");
+      }
+
+      function closeHelpDialog() {
+        document.getElementById("help-dialog").classList.remove("open");
+      }
+
+      // Dialog Events
+      document.querySelectorAll(".btn-save-pr").forEach(btn => btn.addEventListener("click", openPrDialog));
+      document.getElementById("btn-close-pr-dialog").addEventListener("click", closePrDialog);
+      document.getElementById("btn-cancel-pr-dialog").addEventListener("click", closePrDialog);
+      document.getElementById("pr-dialog").addEventListener("click", e => {
+        if (e.target.id === "pr-dialog") closePrDialog();
+      });
+
+      document.getElementById("btn-help")?.addEventListener("click", openHelpDialog);
+      document.getElementById("btn-banner-help")?.addEventListener("click", openHelpDialog);
+      document.getElementById("btn-close-help-dialog")?.addEventListener("click", closeHelpDialog);
+      document.getElementById("btn-done-help")?.addEventListener("click", closeHelpDialog);
+      document.getElementById("help-dialog")?.addEventListener("click", e => {
+        if (e.target.id === "help-dialog") closeHelpDialog();
+      });
+
+      document.querySelectorAll('input[name="static-save-mode"]').forEach(radio => {
+        radio.addEventListener("change", updatePrDialogMode);
+      });
+
+      document.getElementById("btn-clear-pat")?.addEventListener("click", clearPat);
+
+      document.getElementById("btn-load-remote-profile")?.addEventListener("click", async () => {
+        const token = document.getElementById("pr-input-pat").value.trim();
+        state.github.token = token;
+        const repo = document.getElementById("pr-input-repo").value.trim();
+        const branch = document.getElementById("pr-input-branch").value.trim() || 'main';
+        state.github.repo = repo;
+        state.github.baseBranch = branch;
+        const statusEl = document.getElementById("pr-dialog-status");
+
+        if (!token) {
+          statusEl.innerHTML = '<span style="color:hsl(var(--destructive));">❌ 请先输入 PAT 再点击从仓库加载</span>';
+          return;
+        }
+
+        statusEl.innerHTML = '<span style="color:hsl(var(--muted-foreground));">⏳ 正在从 GitHub 仓库加载 profile 正文...</span>';
+        try {
+          await window.SkcbStatic.loadProfileFromRepo(state.profile.id);
+          statusEl.innerHTML = '<div class="alert alert-emerald" style="font-size:12px;">✅ 已成功从仓库加载当前 profile 正文！</div>';
+        } catch (err) {
+          statusEl.innerHTML = `<div class="alert alert-rose" style="font-size:12px;">❌ 加载失败: ${formatGithubError(err)}</div>`;
+        }
+      });
+
+      document.getElementById("btn-submit-pr")?.addEventListener("click", async () => {
+        const repo = document.getElementById("pr-input-repo").value.trim();
+        const branch = document.getElementById("pr-input-branch").value.trim() || 'main';
+        state.github.repo = repo;
+        state.github.baseBranch = branch;
+        const statusEl = document.getElementById("pr-dialog-status");
+        statusEl.innerHTML = '';
+
+        const mode = document.querySelector('input[name="static-save-mode"]:checked')?.value || 'pat';
+
+        if (mode === 'web') {
+          try {
+            statusEl.innerHTML = '<span style="color:hsl(var(--muted-foreground));">⏳ 正在准备 GitHub 网页跳转...</span>';
+            const res = await window.SkcbStatic.openGitHubWebSave(state.profile);
+            if (res.action === 'edit-unloaded') {
+              statusEl.innerHTML = '<div class="alert alert-amber" style="font-size:12px;">⚠️ 该 Profile 正文尚未通过 PAT 加载。为防止默认模板覆盖远端已有配置，<strong>未将默认内容复制到剪贴板</strong>。请在打开的 GitHub 页面中直接查看/编辑，或先输入 PAT 加载正文后再编辑。</div>';
+            } else if (res.copied) {
+              statusEl.innerHTML = '<div class="alert alert-emerald" style="font-size:12px;">📋 Profile 规范化 JSON 已复制到剪贴板！请在打开的 GitHub 网页中粘贴内容，提交到新分支并创建 PR。</div>';
+            } else {
+              statusEl.innerHTML = '<div class="alert alert-amber" style="font-size:12px;">⚠️ 无法自动访问剪贴板，请在下方手动复制 JSON 内容后，前往 GitHub 页面粘贴并创建 PR。</div>';
+              document.getElementById("pr-web-fallback-container").style.display = "flex";
+              document.getElementById("pr-web-fallback-json").value = res.json;
+            }
+
+            if (res.popupBlocked) {
+              const linkContainer = document.getElementById("pr-web-link-container");
+              linkContainer.style.display = "block";
+              linkContainer.innerHTML = `<span>浏览器拦截了弹窗跳转，请点击直接打开：<a href="${res.url}" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary)); text-decoration:underline; font-weight:600;">打开 GitHub 页面</a></span>`;
+            }
+          } catch (err) {
+            statusEl.innerHTML = `<span style="color:hsl(var(--destructive));">❌ ${err.message}</span>`;
+          }
+          return;
+        }
+
+        // Mode: pat
+        const token = document.getElementById("pr-input-pat").value.trim();
+        state.github.token = token;
+        const remember = document.getElementById("pr-check-remember").checked;
+        state.github.remember = remember;
+
+        try {
+          if (remember) {
+            localStorage.setItem(getPatStorageKey(repo), token);
+          } else {
+            localStorage.removeItem(getPatStorageKey(repo));
+          }
+        } catch {}
+
+        if (!token) {
+          statusEl.innerHTML = '<span style="color:hsl(var(--destructive));">❌ 请输入 GitHub Personal Access Token (PAT)</span>';
+          return;
+        }
+
+        const btn = document.getElementById("btn-submit-pr");
+        btn.disabled = true;
+        statusEl.innerHTML = '<span style="color:hsl(var(--muted-foreground));">⏳ 正在通过 GitHub API 创建分支并提交 PR...</span>';
+
+        try {
+          const res = await window.SkcbStatic.saveProfilePR();
+          if (res.noop) {
+            statusEl.innerHTML = `<div class="alert alert-blue" style="font-size:12px;">ℹ️ ${res.message}</div>`;
+          } else if (res.ok) {
+            statusEl.innerHTML = `<div class="alert alert-emerald" style="font-size:12px;">🎉 PR 创建成功！<br/><a href="${res.prUrl}" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary)); text-decoration:underline; font-weight:600;">查看 Pull Request #${res.prUrl.split('/').pop()}</a></div>`;
+            showToast('🎉 PR 创建成功！');
+          } else if (res.code === 'PR_CREATE_FAILED') {
+            statusEl.innerHTML = `<div class="alert alert-amber" style="font-size:12px;">⚠️ 分支 <code>${res.branch}</code> 提交成功，但自动创建 PR 遇到问题。请点击下方链接手动发起 PR：<br/><a href="${res.compareUrl}" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary)); text-decoration:underline; font-weight:600;">在 GitHub 上对比并创建 PR</a></div>`;
+          } else {
+            statusEl.innerHTML = `<div class="alert alert-rose" style="font-size:12px;">❌ ${formatGithubError(res)}</div>`;
+          }
+        } catch (err) {
+          statusEl.innerHTML = `<div class="alert alert-rose" style="font-size:12px;">❌ ${formatGithubError(err)}</div>`;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      // Data Synchronization (Static SPA Mode vs Live Backend HTTP Mode)
+      if (STATIC) {
+        const catalogUrl = new URL(STATIC.catalog || 'data/catalog.json', document.baseURI).toString();
+        const profilesUrl = new URL(STATIC.profiles || 'data/profiles.json', document.baseURI).toString();
+
+        fetch(catalogUrl)
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then(data => {
+            const entries = data.catalog?.entries || data.entries || [];
+            mergeCatalogEntries(entries);
+          })
+          .catch(err => {
+            const alertEl = document.getElementById('live-diagnostics-alert');
+            if (alertEl) {
+              alertEl.className = 'alert alert-rose';
+              alertEl.textContent = `❌ 静态 Catalog 加载失败: ${err.message}`;
+            }
+            showToast(`❌ 加载 catalog 失败: ${err.message}`);
+          });
+
+        fetch(profilesUrl)
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then(data => {
+            const profiles = data.profiles || [];
+            state.staticProfiles.clear();
+            const switcher = document.getElementById("preset-profile-switcher");
+            const extendsSelect = document.getElementById("input-profile-extends");
+            switcher.innerHTML = '';
+            extendsSelect.innerHTML = '';
+
+            profiles.forEach(meta => {
+              state.staticProfiles.set(meta.id, meta);
+              const opt = document.createElement("option");
+              opt.value = meta.id;
+              opt.textContent = `📁 ${meta.file || ('profiles/' + meta.id + '.json')} (${meta.abstract ? '抽象' : '实际'})`;
+              switcher.appendChild(opt);
+
+              const extVal = meta.id.endsWith('.json') ? meta.id : `${meta.id}.json`;
+              const extOpt = document.createElement("option");
+              extOpt.value = extVal;
+              extOpt.textContent = extVal;
+              extendsSelect.appendChild(extOpt);
+            });
+
+            const params = new URLSearchParams(window.location.search);
+            const reqId = params.get('profile') || (profiles[0]?.id || 'personal');
+            if (state.staticProfiles.has(reqId)) {
+              switcher.value = reqId;
+            }
+            switcher.dispatchEvent(new Event('change'));
+          })
+          .catch(err => {
+            const alertEl = document.getElementById('live-diagnostics-alert');
+            if (alertEl) {
+              alertEl.className = 'alert alert-rose';
+              alertEl.textContent = `❌ 静态 Profiles 元数据加载失败: ${err.message}`;
+            }
+            showToast(`❌ 加载 profiles 失败: ${err.message}`);
+          });
+      } else if (window.location.protocol.startsWith('http')) {
         // 1. Fetch real workspace profiles
         fetch('/api/profiles')
           .then(res => res.json())
@@ -3553,64 +4697,7 @@ npx skcb export-pages --out ./pages-dist</pre>
           .then(res => res.json())
           .then(data => {
             if (data.ok && data.catalog && Array.isArray(data.catalog.entries)) {
-              let updated = false;
-              data.catalog.entries.forEach(remoteEntry => {
-                const normalizedId = remoteEntry.id;
-                const b0oAlias = normalizedId.startsWith('upstream/') ? normalizedId.replace(/^upstream\//, 'b0o/') : normalizedId;
-                const existing = CATALOG.find(e => e.id === normalizedId || e.id === b0oAlias);
-                const namespace = normalizedId.split('/')[0] || 'custom';
-                const localId = normalizedId.split('/')[1] || normalizedId;
-                const cat = localId.startsWith('actions.')
-                  ? 'actions'
-                  : (localId.startsWith('search-engines.') || localId.startsWith('search.'))
-                  ? 'search-engines'
-                  : (localId.startsWith('omnibar.') || localId.startsWith('omnibar'))
-                  ? 'omnibar'
-                  : 'actions';
-
-                const contributions = (remoteEntry.contributions || []).map(c => ({
-                  id: c.id,
-                  alias: c.alias || '',
-                  defaultAlias: c.alias || '',
-                  kind: c.kind || 'mapkey',
-                  domain: c.domain || (cat === 'search-engines' ? 'global' : 'global'),
-                  leaderFree: !!c.leaderFree,
-                  callbackRequired: !!c.callbackRequired,
-                  desc: {
-                    'zh-CN': resolveDesc(c.description || c.desc, 'zh-CN') || c.id,
-                    'en': resolveDesc(c.description || c.desc, 'en') || c.id
-                  }
-                }));
-
-                if (!existing) {
-                  const entryDesc = {
-                    'zh-CN': resolveDesc(remoteEntry.description || remoteEntry.desc, 'zh-CN') || normalizedId,
-                    'en': resolveDesc(remoteEntry.description || remoteEntry.desc, 'en') || normalizedId
-                  };
-                  CATALOG.push({
-                    id: normalizedId,
-                    lib: namespace === 'upstream' ? 'b0o' : namespace,
-                    pkg: `@skcb/lib-${namespace === 'upstream' ? 'b0o' : namespace}`,
-                    category: cat,
-                    domain: contributions[0]?.domain || (cat === 'search-engines' ? 'global' : 'global'),
-                    desc: entryDesc,
-                    capabilities: remoteEntry.capabilities || [],
-                    requires: remoteEntry.requires || [],
-                    secrets: remoteEntry.secrets || [],
-                    contributions: contributions
-                  });
-                  updated = true;
-                } else {
-                  if (contributions.length > 0) {
-                    existing.contributions = contributions;
-                    existing.category = cat;
-                    updated = true;
-                  }
-                }
-              });
-              if (updated) {
-                renderAll();
-              }
+              mergeCatalogEntries(data.catalog.entries);
             }
           })
           .catch(() => {});

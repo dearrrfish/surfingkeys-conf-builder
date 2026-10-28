@@ -62,10 +62,14 @@ node dist-tool/cli.js build --workspace my-config/surfingkeys.workspace.json --a
 
 ```sh
 npm run ui
-# 或
-npm run serve
-# 或直接运行可执行脚本
-./dist-tool/server.js --workspace my-config/surfingkeys.workspace.json
+# 或使用 @skcb/ui 命令行启动本地服务
+npx skcb-ui --workspace my-config/surfingkeys.workspace.json
 ```
 
-或直接在浏览器打开本地 `ui/index.html`。详细使用方法与 API 请参见 [HTML 视觉配置方案](visual-interface.md)。
+若希望导出为纯静态单页应用（例如本地预览或部署到 GitHub Pages，结合 PR 提交保存配置），可执行：
+
+```sh
+npx skcb-ui --export-static --out .pages --workspace my-config/surfingkeys.workspace.json
+```
+
+或直接在浏览器打开本地 `ui/index.html`。详细使用方法、静态导出、双模 PR 保存与 REST API 请参见 [HTML 视觉配置方案](visual-interface.md)。

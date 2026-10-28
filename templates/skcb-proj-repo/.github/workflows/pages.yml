@@ -1,0 +1,130 @@
+name: Validate and Deploy GitHub Pages SPA
+
+on:
+  pull_request:
+    paths:
+      - 'profiles/**'
+      - 'extensions/**'
+      - 'surfingkeys.workspace.json'
+      - 'scripts/**'
+      - '.github/workflows/pages.yml'
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'profiles/**'
+      - 'extensions/**'
+      - 'surfingkeys.workspace.json'
+      - 'scripts/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+# GitHub Pages deployment is DISABLED by default.
+# To enable automated deployment:
+#   1. Enable Pages in repository settings:
+#      GitHub Settings -> Pages -> Source: select 'GitHub Actions'
+#   2. Set repository variable `PAGES_DEPLOY_ENABLED` to `'true'` in:
+#      GitHub Settings -> Secrets and variables -> Actions -> Variables
+#      (or change `ENABLED` below to 'true')
+#   3. (Optional) Run manually via workflow_dispatch in the Actions tab.
+
+env:
+  ENABLED: 'false'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate profiles and static export
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.0
+          run_install: false
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          elif [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Validate profiles
+        run: npm run validate:profiles
+
+      - name: Export static site
+        run: npm run pages:build
+
+  deploy:
+    name: Build and Deploy GitHub Pages
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' && (github.event_name == 'workflow_dispatch' || vars.PAGES_DEPLOY_ENABLED == 'true' || env.ENABLED == 'true') }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.0
+          run_install: false
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          elif [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Validate profiles
+        run: npm run validate:profiles
+
+      - name: Build static Pages site
+        run: npm run pages:build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .pages
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

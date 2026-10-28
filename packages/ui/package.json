@@ -1,6 +1,6 @@
 {
   "name": "@skcb/ui",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "SurfingKeys Config Builder visual builder and configuration distribution server",
   "type": "module",
   "bin": {
