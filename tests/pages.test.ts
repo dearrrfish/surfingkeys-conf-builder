@@ -44,8 +44,8 @@ test('pages-workflow: pages.yml has required triggers, permissions, concurrency,
   // Default disabled assertions
   assert.ok(content.includes("ENABLED: 'false'"), 'ENABLED env must default to false');
   assert.ok(
-    content.includes("vars.PAGES_DEPLOY_ENABLED == 'true' || env.ENABLED == 'true'"),
-    'deploy job condition must check vars.PAGES_DEPLOY_ENABLED or env.ENABLED'
+    content.includes("vars.PAGES_DEPLOY_ENABLED == 'true'"),
+    'deploy job condition must check vars.PAGES_DEPLOY_ENABLED'
   );
   assert.ok(
     content.includes("github.event_name != 'pull_request'"),
