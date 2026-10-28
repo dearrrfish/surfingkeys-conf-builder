@@ -863,6 +863,21 @@
       align-items: center;
       gap: 0.35rem;
     }
+    .catalog-group { min-width: 0; }
+    .catalog-group summary { cursor: pointer; list-style: none; }
+    .catalog-group summary::-webkit-details-marker { display: none; }
+    .catalog-group summary::before { content: "▸"; margin-right: 0.5rem; }
+    .catalog-group[open] > summary::before { content: "▾"; }
+    .catalog-group summary > span:first-of-type { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .catalog-group-content { display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0.65rem; }
+    .catalog-group-toolbar { display: flex; justify-content: flex-end; }
+    .catalog-tiles { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .catalog-tile { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.7rem; max-width: 100%; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--background)); color: hsl(var(--foreground)); font: inherit; font-size: 12px; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+    .catalog-tile[aria-checked="true"] { background: hsl(var(--emerald-bg)); border-color: hsl(var(--emerald-border)); }
+    .catalog-tile:hover { border-color: hsl(var(--ring)); }
+    .catalog-tile:focus-visible, .catalog-group summary:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+    .catalog-disabled { border: 1px dashed hsl(var(--border)); border-radius: var(--radius); padding: 0.65rem; margin-top: 0.5rem; }
+    .catalog-disabled-title { font-size: 12px; color: hsl(var(--muted-foreground)); margin-bottom: 0.5rem; }
     .view-mode-toggle button.active {
       background-color: hsl(var(--primary)) !important;
       color: hsl(var(--primary-foreground)) !important;
@@ -1317,6 +1332,7 @@
                     <button class="btn btn-xs active" id="btn-view-hierarchy" title="层级视图 (Lib优先级 -> 站点 -> 类型)" style="border-radius: 0; border: none; padding: 0.25rem 0.55rem; font-size: 11.5px;">🌳 层级</button>
                     <button class="btn btn-xs" id="btn-view-flat" title="平铺视图 (站点 -> 类型)" style="border-radius: 0; border: none; padding: 0.25rem 0.55rem; font-size: 11.5px;">📄 平铺</button>
                   </div>
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-simple-mode" aria-pressed="false" data-i18n="simpleMode">简易模式</button>
                   <input type="search" id="catalog-search-input" class="input" style="width: 210px;" placeholder="🔍 过滤模组库卡片 / 域名 / 按键..." />
                 </div>
               </div>
@@ -1659,7 +1675,8 @@ npx skcb export-pages --out ./pages-dist</pre>
         catActions: "🌐 站点动作 (actions)",
         catSearch: "🔍 搜索引擎 (search)",
         catOmnibar: "🚀 Omnibar",
-        btnExpandAll: "展开全部按键抽屉",
+        btnExpandAll: "展开全部层级与按键",
+        simpleMode: "简易模式",
         btnCollapseAll: "收起全部",
         inspectorTitle: "实时检视器与构建产物 (Live Inspector)",
         btnBuild: "构建并分发脚本",
@@ -1698,7 +1715,8 @@ npx skcb export-pages --out ./pages-dist</pre>
         catActions: "🌐 Site Actions",
         catSearch: "🔍 Search Engines",
         catOmnibar: "🚀 Omnibar",
-        btnExpandAll: "Expand All Drawers",
+        btnExpandAll: "Expand All Groups & Keys",
+        simpleMode: "Simple Mode",
         btnCollapseAll: "Collapse All",
         inspectorTitle: "Live Inspector & Diagnostics",
         btnBuild: "Build & Distribute",
@@ -2001,6 +2019,8 @@ npx skcb export-pages --out ./pages-dist</pre>
       libFilter: "all",
       catFilter: "all",
       viewMode: "hierarchy", // "hierarchy" | "flat"
+      simpleMode: false,
+      collapsedGroups: new Set(),
       searchQuery: "",
       inspectorTab: "keymaps",
       editingKeybinding: null, // fullId of keybinding currently being edited
@@ -2405,7 +2425,10 @@ npx skcb export-pages --out ./pages-dist</pre>
     // Render Module Precedence Pills
     function renderPrecedenceBar() {
       const container = document.getElementById("precedence-pills");
-      const order = state.profile.conflictResolution.modulePrecedence;
+      const configured = state.profile.conflictResolution.modulePrecedence || [];
+      const discovered = CATALOG.map(f => f.lib).filter(Boolean);
+      const order = [...new Set([...configured, ...discovered])];
+      state.profile.conflictResolution.modulePrecedence = order;
       const libBadges = {
         tech: { label: "tech (@skcb/lib-tech)", cls: "badge-blue" },
         ent: { label: "ent (@skcb/lib-ent)", cls: "badge-emerald" },
@@ -2697,13 +2720,6 @@ npx skcb export-pages --out ./pages-dist</pre>
         b0o: "📦 @skcb/lib-b0o"
       };
 
-      const libColorMap = {
-        ent: "badge-emerald",
-        tech: "badge-blue",
-        prod: "badge-purple",
-        b0o: "badge-secondary"
-      };
-
       function groupDomainItems(items) {
         const byDomain = new Map();
         items.forEach(f => {
@@ -2719,75 +2735,97 @@ npx skcb export-pages --out ./pages-dist</pre>
         return { byDomain, domains };
       }
 
-      function renderDomainGroup(domain, domainItems) {
-        let domainHtml = `
-          <div class="catalog-group-domain-header">
-            <span>🌐 <strong>${domain}</strong></span>
-            <span class="badge badge-secondary" style="font-size: 11px;">${domainItems.length} 个模组</span>
-          </div>
-        `;
-
-        if (state.catFilter === "all") {
-          const byCat = new Map();
-          domainItems.forEach(f => {
-            const cat = f.category || "actions";
-            if (!byCat.has(cat)) byCat.set(cat, []);
-            byCat.get(cat).push(f);
-          });
-          const catOrder = ["actions", "search-engines", "omnibar"];
-          catOrder.forEach(cat => {
-            const list = byCat.get(cat);
-            if (!list || list.length === 0) return;
-            domainHtml += `
-              <div class="catalog-group-cat-header">
-                <span>${catTitleMap[cat] || cat}</span>
-                <span style="font-weight: 400; opacity: 0.8;">(${list.length})</span>
-              </div>
-            `;
-            domainHtml += list.map(f => renderFeatureCard(f, res, suppressedMap, winnerMap, inheritedSet)).join("");
-          });
+      const text = (zh, en) => state.uiLang === "zh-CN" ? zh : en;
+      const escape = value => String(value).replace(/[&<>"']/g, c => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[c]));
+      const groupKey = (kind, lib, domain = "") => encodeURIComponent(JSON.stringify([kind, lib, domain]));
+      const active = items => items.some(f => res.effectiveFeatures.has(f.id));
+      const tile = (label, handler, selected = false) => `<button type="button" class="catalog-tile" role="switch" aria-checked="${selected}" aria-label="${escape(label)}" onclick="${handler}"><span>${escape(label)}</span><span class="switch switch-sm" aria-checked="${selected}" aria-hidden="true"><span class="switch-thumb"></span></span></button>`;
+      const disabledArea = (title, tiles) => tiles ? `<section class="catalog-disabled"><div class="catalog-disabled-title">${title}</div><div class="catalog-tiles">${tiles}</div></section>` : "";
+      const featureTile = f => tile(f.id, `toggleFeature('${f.id}')`, res.effectiveFeatures.has(f.id));
+      const groupTile = (label, key) => tile(label, `toggleCatalogGroup('${key}', true)`);
+      function groupShell(key, label, items, content, level) {
+        const count = items.filter(f => res.effectiveFeatures.has(f.id)).length;
+        return `<details class="catalog-group" data-group-key="${key}" ${state.collapsedGroups.has(key) ? "" : "open"}>
+          <summary class="catalog-group-${level}-header"><span>${escape(label)}</span><span class="badge badge-secondary">${count}/${items.length}</span></summary>
+          <div class="catalog-group-content"><div class="catalog-group-toolbar"><button type="button" class="switch switch-sm" role="switch" aria-checked="true" aria-label="${escape(label)}" onclick="toggleCatalogGroup('${key}', false)"><span class="switch-thumb"></span></button></div>${content}</div>
+        </details>`;
+      }
+      function domainKey(lib, domain) { return groupKey("domain", lib, domain); }
+      function renderDomainGroup(domain, domainItems, lib) {
+        const key = domainKey(lib, domain);
+        let content;
+        if (state.simpleMode) {
+          content = `<div class="catalog-tiles">${domainItems.map(featureTile).join("")}</div>`;
         } else {
-          domainHtml += domainItems.map(f => renderFeatureCard(f, res, suppressedMap, winnerMap, inheritedSet)).join("");
+          const enabled = domainItems.filter(f => res.effectiveFeatures.has(f.id));
+          content = ["actions", "search-engines", "omnibar"].map(cat => {
+            const items = enabled.filter(f => (f.category || "actions") === cat);
+            return items.length ? `<div class="catalog-group-cat-header">${catTitleMap[cat] || cat}</div>` + items.map(f => renderFeatureCard(f, res, suppressedMap, winnerMap, inheritedSet)).join("") : "";
+          }).join("");
+          content += disabledArea(text("未启用模组", "Disabled Modules"), domainItems.filter(f => !res.effectiveFeatures.has(f.id)).map(featureTile).join(""));
         }
-
-        return domainHtml;
+        return groupShell(key, domain, domainItems, content, "domain");
       }
-
-      if (state.viewMode === "hierarchy") {
-        let finalHtml = "";
-        sortedLibs.forEach(lib => {
-          const libItems = filtered.filter(f => (f.lib || "other") === lib);
-          if (libItems.length === 0) return;
-          const prioIdx = precedence.indexOf(lib);
-          const prioLabel = prioIdx >= 0 ? `Priority #${prioIdx + 1}` : "Standard";
-          finalHtml += `
-            <div class="catalog-group-lib-header">
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span class="badge ${libColorMap[lib] || "badge-secondary"}" style="font-size: 13px; font-weight: 600; padding: 0.35rem 0.65rem;">
-                  ${libIconMap[lib] || `@skcb/lib-${lib}`}
-                </span>
-                <span style="font-size: 12px; color: hsl(var(--muted-foreground));">
-                  (${prioLabel} · ${libItems.length} 模组)
-                </span>
-              </div>
-            </div>
-          `;
-          const { byDomain, domains } = groupDomainItems(libItems);
-          domains.forEach(domain => {
-            finalHtml += renderDomainGroup(domain, byDomain.get(domain));
-          });
-        });
-        listEl.innerHTML = finalHtml;
-      } else {
-        // Flat mode: 站点 -> 类型 (仅限全部视图)
-        let finalHtml = "";
-        const { byDomain, domains } = groupDomainItems(filtered);
+      function renderDomains(items, lib) {
+        const { byDomain, domains } = groupDomainItems(items);
+        let content = "";
+        let disabled = "";
         domains.forEach(domain => {
-          finalHtml += renderDomainGroup(domain, byDomain.get(domain));
+          const domainItems = byDomain.get(domain);
+          // 分组启停与状态始终基于完整目录，筛选仅决定展示哪些分组。
+          const allItems = getCatalogGroupItems(domainKey(lib, domain));
+          if (active(allItems)) content += renderDomainGroup(domain, domainItems, lib);
+          else disabled += groupTile(domain, domainKey(lib, domain));
         });
-        listEl.innerHTML = finalHtml;
+        return content + disabledArea(text("未启用站点", "Disabled Sites"), disabled);
       }
+      let finalHtml = "";
+      if (state.viewMode === "hierarchy") {
+        let disabled = "";
+        sortedLibs.forEach(lib => {
+          const items = filtered.filter(f => (f.lib || "other") === lib);
+          const key = groupKey("lib", lib);
+          if (active(getCatalogGroupItems(key))) {
+            finalHtml += groupShell(key, libIconMap[lib] || `@skcb/lib-${lib}`, items, renderDomains(items, lib), "lib");
+          } else {
+            disabled += groupTile(libIconMap[lib] || `@skcb/lib-${lib}`, key);
+          }
+        });
+        finalHtml += disabledArea(text("未启用 lib 包", "Disabled Libraries"), disabled);
+      } else {
+        finalHtml = renderDomains(filtered, "*");
+      }
+      listEl.innerHTML = finalHtml;
+      listEl.querySelectorAll("details[data-group-key]").forEach(group => {
+        group.addEventListener("toggle", () => {
+          if (!group.isConnected) return;
+          if (group.open) state.collapsedGroups.delete(group.dataset.groupKey);
+          else state.collapsedGroups.add(group.dataset.groupKey);
+        });
+      });
     }
+
+    function getCatalogGroupItems(key) {
+      const [kind, lib, domain] = JSON.parse(decodeURIComponent(key));
+      return CATALOG.filter(f => {
+        if (lib !== "*" && (f.lib || "other") !== lib) return false;
+        const site = f.domain || (f.contributions && f.contributions[0] && f.contributions[0].domain) || "global";
+        return kind === "lib" || site === domain;
+      });
+    }
+
+    function setFeatureEnabled(featureId, enabled) {
+      const inherited = isCommonParent(state.profile.extends) && COMMON_PARENT_FEATURES.includes(featureId);
+      state.profile.selectAdd = (state.profile.selectAdd || []).filter(id => id !== featureId);
+      state.profile.selectRemove = (state.profile.selectRemove || []).filter(id => id !== featureId);
+      if (enabled && !inherited) state.profile.selectAdd.push(featureId);
+      if (!enabled && inherited) state.profile.selectRemove.push(featureId);
+    }
+
+    window.toggleCatalogGroup = function(key, enabled) {
+      getCatalogGroupItems(key).forEach(f => setFeatureEnabled(f.id, enabled));
+      renderAll();
+    };
 
     window.toggleCardDrawer = function(featureId) {
       if (state.expandedCards.has(featureId)) {
@@ -2799,23 +2837,7 @@ npx skcb export-pages --out ./pages-dist</pre>
     };
 
     window.toggleFeature = function(featureId) {
-      const inherited = isCommonParent(state.profile.extends) && COMMON_PARENT_FEATURES.includes(featureId);
-      const effective = getEffectiveFeatureIds();
-
-      state.profile.selectAdd = state.profile.selectAdd || [];
-      state.profile.selectRemove = state.profile.selectRemove || [];
-
-      if (effective.has(featureId)) {
-        state.profile.selectAdd = state.profile.selectAdd.filter(id => id !== featureId);
-        if (inherited && !state.profile.selectRemove.includes(featureId)) {
-          state.profile.selectRemove.push(featureId);
-        }
-      } else {
-        state.profile.selectRemove = state.profile.selectRemove.filter(id => id !== featureId);
-        if (!inherited && !state.profile.selectAdd.includes(featureId)) {
-          state.profile.selectAdd.push(featureId);
-        }
-      }
+      setFeatureEnabled(featureId, !getEffectiveFeatureIds().has(featureId));
       renderAll();
     };
 
@@ -3260,6 +3282,12 @@ npx skcb export-pages --out ./pages-dist</pre>
         });
       }
 
+      document.getElementById("btn-simple-mode").addEventListener("click", e => {
+        state.simpleMode = !state.simpleMode;
+        e.currentTarget.setAttribute("aria-pressed", String(state.simpleMode));
+        renderCatalog();
+      });
+
       // Preset switcher
       document.getElementById("preset-profile-switcher").addEventListener("change", (e) => {
         const p = PRESETS[e.target.value];
@@ -3273,6 +3301,7 @@ npx skcb export-pages --out ./pages-dist</pre>
         state.profile.selectRemoveContributions = [...p.selectRemoveContributions];
         state.profile.keybindings = p.keybindings ? { ...p.keybindings } : {};
         state.profile.conflictResolution.mode = p.conflictMode;
+        state.profile.conflictResolution.modulePrecedence = [...(p.modulePrecedence || ["tech", "ent", "prod", "b0o"])];
         state.profile.settings.defaultSearchEngine = p.defaultSearch;
         state.profile.overrides = [];
 
@@ -3380,10 +3409,12 @@ npx skcb export-pages --out ./pages-dist</pre>
 
       // Expand / Collapse all drawers in Left Catalog
       document.getElementById("btn-expand-all").addEventListener("click", () => {
+        state.collapsedGroups.clear();
         CATALOG.forEach(f => state.expandedCards.add(f.id));
         renderCatalog();
       });
       document.getElementById("btn-collapse-all").addEventListener("click", () => {
+        document.querySelectorAll("#catalog-cards-list [data-group-key]").forEach(group => state.collapsedGroups.add(group.dataset.groupKey));
         state.expandedCards.clear();
         renderCatalog();
       });
@@ -3487,6 +3518,7 @@ npx skcb export-pages --out ./pages-dist</pre>
                   locale: p.locale || "zh-CN",
                   abstract: !!p.abstract,
                   conflictMode: p.conflictResolution?.mode || "module-precedence",
+                  modulePrecedence: p.conflictResolution?.modulePrecedence,
                   defaultSearch: p.settings?.defaultSearchEngine || "du",
                   selectAdd: p.selectAdd || p.select || [],
                   selectRemoveContributions: p.selectRemoveContributions || [],
